@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unit Converter — MathTools</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#050508;--panel:#0e0e16;--border:#1a1a2e;--accent:#00d2ff;--text:#e8e8f0;--muted:#44445a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem 4rem;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(0,210,255,0.07) 0%,transparent 60%),linear-gradient(rgba(0,210,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,210,255,0.02) 1px,transparent 1px);background-size:auto,50px 50px,50px 50px;pointer-events:none;z-index:0;}
+  .wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;}
+  .back{display:inline-flex;align-items:center;gap:0.5rem;color:var(--muted);font-size:0.8rem;text-decoration:none;letter-spacing:0.1em;margin-bottom:2rem;transition:color 0.2s;}
+  .back:hover{color:var(--accent);}
+  header{text-align:center;margin-bottom:2.5rem;}
+  h1{font-size:clamp(2rem,7vw,4rem);font-weight:800;background:linear-gradient(135deg,#00d2ff,#3a7bd5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .sub{color:var(--muted);font-size:0.75rem;letter-spacing:0.25em;font-family:'JetBrains Mono',monospace;margin-top:0.5rem;}
+  .tabs{display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .tab{background:var(--panel);border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.7rem;letter-spacing:0.15em;padding:0.5rem 1rem;border-radius:8px;cursor:pointer;transition:all 0.15s;}
+  .tab.active,.tab:hover{border-color:var(--accent);color:var(--accent);}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.5rem;}
+  .row{display:flex;gap:1rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;}
+  input[type=number]{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:1.2rem;padding:0.6rem 0.8rem;border-radius:8px;outline:none;flex:1;min-width:100px;transition:border-color 0.2s;}
+  input[type=number]:focus{border-color:var(--accent);}
+  select{background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:1rem;padding:0.6rem 0.8rem;border-radius:8px;outline:none;flex:1;min-width:120px;cursor:pointer;}
+  select:focus{border-color:var(--accent);}
+  .btn{background:var(--accent);color:#050508;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;padding:0.7rem 1.5rem;border-radius:8px;cursor:pointer;width:100%;transition:box-shadow 0.2s;}
+  .btn:hover{box-shadow:0 0 15px rgba(0,210,255,0.4);}
+  .result{margin-top:1.2rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1.2rem;text-align:center;min-height:60px;}
+  .res-val{font-size:2rem;font-weight:800;color:var(--accent);font-family:'JetBrains Mono',monospace;}
+  .res-label{font-size:0.75rem;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:0.3rem;}
+  .arrow{font-size:1.5rem;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Back to All Tools</a>
+  <header>
+    <h1>Unit Converter</h1>
+    <div class="sub">// length · weight · temp · area · volume</div>
+  </header>
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('length',this)">📏 Length</button>
+    <button class="tab" onclick="setTab('weight',this)">⚖️ Weight</button>
+    <button class="tab" onclick="setTab('temp',this)">🌡️ Temp</button>
+    <button class="tab" onclick="setTab('area',this)">⬛ Area</button>
+    <button class="tab" onclick="setTab('volume',this)">🧪 Volume</button>
+  </div>
+  <div class="card">
+    <div class="row">
+      <input type="number" id="val" placeholder="Value" oninput="convert()">
+      <select id="from" onchange="convert()"></select>
+      <div class="arrow">→</div>
+      <select id="to" onchange="convert()"></select>
+    </div>
+    <div class="result">
+      <div class="res-val" id="res">—</div>
+      <div class="res-label" id="res-label"></div>
+    </div>
+  </div>
+</div>
+<script>
+const units={
+  length:{m:1,km:0.001,cm:100,mm:1000,mile:0.000621371,yard:1.09361,foot:3.28084,inch:39.3701,'nautical mile':0.000539957},
+  weight:{kg:1,g:1000,mg:1000000,lb:2.20462,oz:35.274,ton:0.001,'metric ton':0.001,stone:0.157473},
+  area:{'m²':1,'km²':0.000001,'cm²':10000,'mm²':1000000,'ft²':10.7639,'in²':1550,'acre':0.000247105,'hectare':0.0001},
+  volume:{'L':1,'mL':1000,'m³':0.001,'cm³':1000,'ft³':0.0353147,'in³':61.0237,'gallon(US)':0.264172,'gallon(UK)':0.219969,'cup':4.22675,'fl oz':33.814},
+};
+let tab='length';
+function setTab(t,btn){
+  tab=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  buildSelects();
+  convert();
+}
+function buildSelects(){
+  const from=document.getElementById('from'),to=document.getElementById('to');
+  const keys=tab==='temp'?['°C','°F','K','°R']:Object.keys(units[tab]);
+  const build=sel=>{const v=sel.value;sel.innerHTML=keys.map(k=>`<option value="${k}">${k}</option>`).join('');if(keys.includes(v))sel.value=v;};
+  build(from);build(to);
+  if(from.value===to.value&&keys.length>1)to.value=keys[1];
+}
+function convert(){
+  const v=parseFloat(document.getElementById('val').value);
+  const f=document.getElementById('from').value,t=document.getElementById('to').value;
+  if(isNaN(v)){document.getElementById('res').textContent='—';document.getElementById('res-label').textContent='';return;}
+  let result;
+  if(tab==='temp'){
+    let celsius;
+    if(f==='°C')celsius=v;
+    else if(f==='°F')celsius=(v-32)*5/9;
+    else if(f==='K')celsius=v-273.15;
+    else celsius=v*5/9-273.15;
+    if(t==='°C')result=celsius;
+    else if(t==='°F')result=celsius*9/5+32;
+    else if(t==='K')result=celsius+273.15;
+    else result=(celsius+273.15)*9/5;
+  } else {
+    const base=v/units[tab][f];
+    result=base*units[tab][t];
+  }
+  const fmt=Math.abs(result)<0.001||Math.abs(result)>9999999?result.toExponential(4):parseFloat(result.toFixed(6)).toLocaleString();
+  document.getElementById('res').textContent=`${fmt} ${t}`;
+  document.getElementById('res-label').textContent=`${v} ${f} = ${fmt} ${t}`;
+}
+buildSelects();
+</script>
+</body>
+</html>
