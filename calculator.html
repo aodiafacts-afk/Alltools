@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculator — MathTools</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#050508;--panel:#0e0e16;--border:#1a1a2e;--accent:#f953c6;--text:#e8e8f0;--muted:#44445a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem 4rem;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(249,83,198,0.07) 0%,transparent 60%),linear-gradient(rgba(249,83,198,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(249,83,198,0.02) 1px,transparent 1px);background-size:auto,50px 50px,50px 50px;pointer-events:none;z-index:0;}
+  .wrap{position:relative;z-index:1;max-width:420px;margin:0 auto;}
+  .back{display:inline-flex;align-items:center;gap:0.5rem;color:var(--muted);font-size:0.8rem;text-decoration:none;letter-spacing:0.1em;margin-bottom:2rem;transition:color 0.2s;}
+  .back:hover{color:var(--accent);}
+  header{text-align:center;margin-bottom:2rem;}
+  h1{font-size:clamp(2rem,7vw,3.5rem);font-weight:800;background:linear-gradient(135deg,#f953c6,#b91d73);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .sub{color:var(--muted);font-size:0.75rem;letter-spacing:0.25em;font-family:'JetBrains Mono',monospace;margin-top:0.3rem;}
+  .calc{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;}
+  .display{padding:1.5rem;background:var(--bg);border-bottom:1px solid var(--border);}
+  .expr{font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:var(--muted);min-height:1.2rem;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .main-display{font-family:'JetBrains Mono',monospace;font-size:2.5rem;font-weight:700;text-align:right;color:var(--text);word-break:break-all;min-height:3.5rem;display:flex;align-items:center;justify-content:flex-end;}
+  .history{max-height:100px;overflow-y:auto;padding:0.5rem 1rem;border-bottom:1px solid var(--border);}
+  .history-item{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);text-align:right;padding:0.1rem 0;cursor:pointer;transition:color 0.2s;}
+  .history-item:hover{color:var(--accent);}
+  .btns{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);}
+  .btn{background:var(--panel);border:none;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;padding:1.1rem 0.5rem;cursor:pointer;transition:background 0.1s,color 0.1s;user-select:none;}
+  .btn:hover{background:#1a1a2e;}
+  .btn:active{background:#252540;}
+  .btn.op{color:var(--accent);}
+  .btn.fn{color:#00d2ff;font-size:0.85rem;}
+  .btn.eq{background:var(--accent);color:#fff;grid-column:span 1;}
+  .btn.eq:hover{background:#e040a8;}
+  .btn.zero{grid-column:span 2;}
+  .btn.clr{color:#ff6584;}
+  .error{color:#ff6584 !important;}
+  .history::-webkit-scrollbar{width:3px;}
+  .history::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Back to All Tools</a>
+  <header>
+    <h1>Calculator</h1>
+    <div class="sub">// full featured · history · keyboard</div>
+  </header>
+  <div class="calc">
+    <div class="display">
+      <div class="expr" id="expr"></div>
+      <div class="main-display" id="disp">0</div>
+    </div>
+    <div class="history" id="hist"></div>
+    <div class="btns">
+      <button class="btn fn" onclick="calcFn('sin')">sin</button>
+      <button class="btn fn" onclick="calcFn('cos')">cos</button>
+      <button class="btn fn" onclick="calcFn('tan')">tan</button>
+      <button class="btn fn" onclick="calcFn('sqrt')">√</button>
+      <button class="btn fn" onclick="calcFn('log')">log</button>
+      <button class="btn fn" onclick="calcFn('ln')">ln</button>
+      <button class="btn fn" onclick="calcFn('sq')">x²</button>
+      <button class="btn fn" onclick="calcFn('inv')">1/x</button>
+      <button class="btn clr" onclick="allClear()">AC</button>
+      <button class="btn clr" onclick="backspace()">⌫</button>
+      <button class="btn op" onclick="input('%')">%</button>
+      <button class="btn op" onclick="input('/')">÷</button>
+      <button class="btn" onclick="input('7')">7</button>
+      <button class="btn" onclick="input('8')">8</button>
+      <button class="btn" onclick="input('9')">9</button>
+      <button class="btn op" onclick="input('*')">×</button>
+      <button class="btn" onclick="input('4')">4</button>
+      <button class="btn" onclick="input('5')">5</button>
+      <button class="btn" onclick="input('6')">6</button>
+      <button class="btn op" onclick="input('-')">−</button>
+      <button class="btn" onclick="input('1')">1</button>
+      <button class="btn" onclick="input('2')">2</button>
+      <button class="btn" onclick="input('3')">3</button>
+      <button class="btn op" onclick="input('+')">+</button>
+      <button class="btn" onclick="toggleSign()">±</button>
+      <button class="btn zero" onclick="input('0')">0</button>
+      <button class="btn" onclick="input('.')">.</button>
+      <button class="btn eq" onclick="calculate()">=</button>
+    </div>
+  </div>
+</div>
+<script>
+  let cur='0',expr='',justCalc=false;
+  const disp=document.getElementById('disp');
+  const exprEl=document.getElementById('expr');
+  const hist=document.getElementById('hist');
+  function update(){disp.textContent=cur;exprEl.textContent=expr;disp.className='main-display'+(cur.length>10?' small':'');}
+  function input(v){
+    const ops=['+','-','*','/','%'];
+    if(justCalc&&!ops.includes(v)){cur='0';expr='';justCalc=false;}
+    justCalc=false;
+    if(ops.includes(v)){
+      if(cur==='0'&&v==='-'){cur='-';update();return;}
+      expr=(expr||cur)+v;cur='0';update();return;
+    }
+    if(v==='.'&&cur.includes('.'))return;
+    cur=cur==='0'&&v!='.'?v:cur+v;
+    update();
+  }
+  function calculate(){
+    try{
+      const full=(expr||'')+cur;
+      const res=Function('"use strict";return ('+full.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-')+')')();
+      if(!isFinite(res))throw new Error('Error');
+      const r=parseFloat(res.toFixed(10)).toString();
+      addHistory(full+' = '+r);
+      expr='';cur=r;justCalc=true;update();
+    }catch(e){disp.textContent='Error';disp.classList.add('error');setTimeout(()=>{cur='0';expr='';update();},1000);}
+  }
+  function calcFn(fn){
+    const n=parseFloat(cur);
+    let r;
+    if(fn==='sin')r=Math.sin(n*Math.PI/180);
+    else if(fn==='cos')r=Math.cos(n*Math.PI/180);
+    else if(fn==='tan')r=Math.tan(n*Math.PI/180);
+    else if(fn==='sqrt')r=Math.sqrt(n);
+    else if(fn==='log')r=Math.log10(n);
+    else if(fn==='ln')r=Math.log(n);
+    else if(fn==='sq')r=n*n;
+    else if(fn==='inv')r=1/n;
+    if(isNaN(r)||!isFinite(r)){disp.textContent='Error';disp.classList.add('error');setTimeout(()=>{cur='0';update();},1000);return;}
+    addHistory(fn+'('+n+') = '+parseFloat(r.toFixed(10)));
+    cur=parseFloat(r.toFixed(10)).toString();update();
+  }
+  function allClear(){cur='0';expr='';justCalc=false;update();}
+  function backspace(){cur=cur.length>1?cur.slice(0,-1):'0';update();}
+  function toggleSign(){cur=(parseFloat(cur)*-1).toString();update();}
+  function addHistory(s){const d=document.createElement('div');d.className='history-item';d.textContent=s;d.onclick=()=>{const parts=s.split(' = ');cur=parts[parts.length-1];justCalc=true;update();};hist.insertBefore(d,hist.firstChild);if(hist.children.length>10)hist.removeChild(hist.lastChild);}
+  document.addEventListener('keydown',e=>{
+    if(e.key>='0'&&e.key<='9')input(e.key);
+    else if(['+','-','*','/','%'].includes(e.key))input(e.key);
+    else if(e.key==='.')input('.');
+    else if(e.key==='Enter'||e.key==='=')calculate();
+    else if(e.key==='Backspace')backspace();
+    else if(e.key==='Escape')allClear();
+  });
+</script>
+</body>
+</html>
