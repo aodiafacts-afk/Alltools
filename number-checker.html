@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Checker — MathTools</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#050508;--panel:#0e0e16;--border:#1a1a2e;--accent:#ff6584;--text:#e8e8f0;--muted:#44445a;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem 4rem;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(255,101,132,0.07) 0%,transparent 60%),linear-gradient(rgba(255,101,132,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,101,132,0.02) 1px,transparent 1px);background-size:auto,50px 50px,50px 50px;pointer-events:none;z-index:0;}
+  .wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;}
+  .back{display:inline-flex;align-items:center;gap:0.5rem;color:var(--muted);font-size:0.8rem;text-decoration:none;letter-spacing:0.1em;margin-bottom:2rem;transition:color 0.2s;}
+  .back:hover{color:var(--accent);}
+  header{text-align:center;margin-bottom:2.5rem;}
+  h1{font-size:clamp(2rem,7vw,4rem);font-weight:800;background:linear-gradient(135deg,#ff6584,#ff4757);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .sub{color:var(--muted);font-size:0.75rem;letter-spacing:0.25em;font-family:'JetBrains Mono',monospace;margin-top:0.5rem;}
+  .input-zone{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;}
+  .num-input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--accent);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:2rem;padding:0.4rem 1rem;border-radius:8px;outline:none;transition:box-shadow 0.2s;}
+  .num-input:focus{box-shadow:0 0 0 2px var(--accent),0 0 20px rgba(255,101,132,0.2);}
+  .num-input::placeholder{color:var(--muted);}
+  .btn{background:var(--accent);color:#fff;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;padding:0.8rem 1.8rem;border-radius:8px;cursor:pointer;transition:transform 0.1s,box-shadow 0.2s;}
+  .btn:hover{box-shadow:0 0 20px rgba(255,101,132,0.5);transform:translateY(-1px);}
+  .clr{background:transparent;color:var(--muted);border:1px solid var(--border);font-family:'Syne',sans-serif;font-size:0.8rem;padding:0.8rem 1.2rem;border-radius:8px;cursor:pointer;transition:color 0.2s;}
+  .clr:hover{color:#ff6584;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.8rem;animation:fadeIn 0.3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .prop{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;align-items:center;gap:0.8rem;}
+  .prop-icon{font-size:1.5rem;width:40px;text-align:center;}
+  .prop-label{font-size:0.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;}
+  .prop-val{font-size:1rem;font-weight:700;}
+  .yes{color:#43e97b;} .no{color:#ff6584;} .neutral{color:#f7971e;}
+  .empty{text-align:center;padding:4rem 2rem;color:var(--muted);}
+  .empty .big{font-size:5rem;font-weight:800;opacity:0.1;}
+  .empty p{font-size:0.75rem;letter-spacing:0.2em;font-family:'JetBrains Mono',monospace;margin-top:0.5rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Back to All Tools</a>
+  <header>
+    <h1>Number Checker</h1>
+    <div class="sub">// analyze any number in detail</div>
+  </header>
+  <div class="input-zone">
+    <input class="num-input" id="inp" type="number" placeholder="Enter number…" autofocus>
+    <button class="btn" onclick="run()">▶ Check</button>
+    <button class="clr" onclick="clr()">✕ Clear</button>
+  </div>
+  <div id="out">
+    <div class="empty"><div class="big">?</div><p>Enter a number and press Check</p></div>
+  </div>
+</div>
+<script>
+  document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+  function isPrime(n){if(n<2)return false;if(n===2)return true;if(n%2===0)return false;for(let i=3;i<=Math.sqrt(n);i+=2)if(n%i===0)return false;return true;}
+  function isPerfect(n){if(n<2)return false;let s=1;for(let i=2;i<=Math.sqrt(n);i++)if(n%i===0){s+=i;if(i!==n/i)s+=n/i;}return s===n;}
+  function isArmstrong(n){const d=String(Math.abs(n)).split('');const p=d.length;return parseInt(d.reduce((a,x)=>a+Math.pow(parseInt(x),p),0))===Math.abs(n);}
+  function isPalindrome(n){const s=String(Math.abs(n));return s===s.split('').reverse().join('');}
+  function isFibonacci(n){const isPerfSq=x=>Number.isInteger(Math.sqrt(x));return isPerfSq(5*n*n+4)||isPerfSq(5*n*n-4);}
+  function prop(icon,label,val,cls){return `<div class="prop"><div class="prop-icon">${icon}</div><div><div class="prop-label">${label}</div><div class="prop-val ${cls}">${val}</div></div></div>`;}
+  function yesno(v){return v?['yes','✓ YES']:['no','✗ NO'];}
+  function run(){
+    const v=parseFloat(document.getElementById('inp').value);
+    if(isNaN(v)){return;}
+    const n=v,abs=Math.abs(n),isInt=Number.isInteger(n);
+    const props=[];
+    props.push(prop('±','Sign',n>0?'Positive':n<0?'Negative':'Zero',n>0?'yes':n<0?'no':'neutral'));
+    props.push(prop('🔢','Type',isInt?'Integer':'Decimal','neutral'));
+    if(isInt){
+      const [ec,ev]=yesno(n%2===0);
+      props.push(prop('⚖️','Even / Odd',n%2===0?'Even':'Odd',ec));
+      const [pc,pv]=yesno(isPrime(abs));
+      props.push(prop('🔬','Prime',pv,pc));
+      const [sc,sv]=yesno(Number.isInteger(Math.sqrt(abs)));
+      props.push(prop('²','Perfect Square',sv,sc));
+      const [cc,cv]=yesno(Number.isInteger(Math.cbrt(abs)));
+      props.push(prop('³','Perfect Cube',cv,cc));
+      const [perc,perv]=yesno(isPerfect(abs));
+      props.push(prop('💎','Perfect Number',perv,perc));
+      const [ac,av]=yesno(isArmstrong(abs));
+      props.push(prop('💪','Armstrong',av,ac));
+      const [palc,palv]=yesno(isPalindrome(abs));
+      props.push(prop('🔄','Palindrome',palv,palc));
+      const [fc,fv]=yesno(isFibonacci(abs));
+      props.push(prop('🌀','Fibonacci',fv,fc));
+    }
+    props.push(prop('√','Square Root',Math.sqrt(abs).toFixed(4),'neutral'));
+    props.push(prop('∛','Cube Root',Math.cbrt(abs).toFixed(4),'neutral'));
+    props.push(prop('²','Squared',(n*n).toLocaleString(),'neutral'));
+    props.push(prop('|x|','Absolute',abs.toLocaleString(),'neutral'));
+    if(isInt&&abs<10000)props.push(prop('2️⃣','Binary','0b'+abs.toString(2),'neutral'));
+    if(isInt&&abs<100000)props.push(prop('🔟','Hex','0x'+abs.toString(16).toUpperCase(),'neutral'));
+    document.getElementById('out').innerHTML=`<div class="grid">${props.join('')}</div>`;
+  }
+  function clr(){document.getElementById('inp').value='';document.getElementById('out').innerHTML='<div class="empty"><div class="big">?</div><p>Enter a number and press Check</p></div>';}
+</script>
+</body>
+</html>
