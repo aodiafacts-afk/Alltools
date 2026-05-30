@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Psychology T-Test Suite</title>
+    <!-- Importing jStat for complex statistical distributions -->
+    <script src="https://cdn.jsdelivr.net/npm/jstat@latest/dist/jstat.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: #2c3e50;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h2 { margin-top: 0; color: #1a252f; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        .credit { font-size: 0.9em; color: #7f8c8d; margin-bottom: 25px; font-weight: bold; }
+        label { display: block; margin: 15px 0 5px; font-weight: 600; color: #34495e; }
+        textarea {
+            width: 100%; height: 80px; padding: 10px; border: 1px solid #bdc3c7;
+            border-radius: 4px; font-family: monospace; box-sizing: border-box; resize: vertical;
+        }
+        select, button {
+            width: 100%; padding: 12px; margin-top: 15px; border-radius: 4px;
+            border: 1px solid #bdc3c7; font-size: 16px;
+        }
+        button {
+            background-color: #2980b9; color: white; border: none;
+            cursor: pointer; font-weight: bold; transition: background 0.3s;
+        }
+        button:hover { background-color: #1c5980; }
+        
+        .results-section {
+            margin-top: 30px; padding: 20px; background-color: #ecf0f1;
+            border-left: 5px solid #2980b9; border-radius: 4px; display: none;
+        }
+        h3 { margin-top: 0; color: #2980b9; }
+        
+        table {
+            width: 100%; border-collapse: collapse; margin-top: 15px;
+            background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 10px; text-align: center; border: 1px solid #bdc3c7;
+        }
+        th { background-color: #34495e; color: white; font-weight: 600; }
+        .highlight { font-weight: bold; color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Advanced T-Test Suite (VassarStats Style)</h2>
+    <div class="credit">Developer: Prahallada Kalasa</div>
+
+    <label for="testType">1. Select Experimental Design:</label>
+    <select id="testType">
+        <option value="independent">Independent Samples T-Test (Between-Subjects)</option>
+        <option value="paired">Paired/Correlated Samples T-Test (Within-Subjects)</option>
+    </select>
+
+    <label for="group1">2. Data for Sample A (comma or space separated):</label>
+    <textarea id="group1" placeholder="e.g., 45 42 50 48 55 47 49 44"></textarea>
+
+    <label for="group2">3. Data for Sample B (comma or space separated):</label>
+    <textarea id="group2" placeholder="e.g., 35 38 32 40 36 33 31 39"></textarea>
+
+    <button onclick="calculateAdvancedTTest()">Calculate Statistics</button>
+
+    <div id="results" class="results-section">
+        <h3>Statistical Output</h3>
+        
+        <h4>Data Summary</h4>
+        <table id="descTable">
+            <tr>
+                <th>Sample</th><th>N</th><th>Mean</th><th>SS</th><th>Variance</th><th>SD</th><th>SEM</th>
+            </tr>
+            <tr>
+                <td>Sample A</td><td id="n1"></td><td id="m1"></td><td id="ss1"></td><td id="v1"></td><td id="sd1"></td><td id="se1"></td>
+            </tr>
+            <tr>
+                <td>Sample B</td><td id="n2"></td><td id="m2"></td><td id="ss2"></td><td id="v2"></td><td id="sd2"></td><td id="se2"></td>
+            </tr>
+        </table>
+
+        <h4>T-Test Results</h4>
+        <table>
+            <tr>
+                <th>t-statistic</th><th>df</th><th>p (1-tailed)</th><th>p (2-tailed)</th>
+            </tr>
+            <tr>
+                <td id="t-stat" class="highlight"></td><td id="df-stat"></td><td id="p1-stat"></td><td id="p2-stat" class="highlight"></td>
+            </tr>
+        </table>
+
+        <h4>Effect Size & Confidence Intervals</h4>
+        <table>
+            <tr>
+                <th>Mean Difference</th><th>95% CI Lower</th><th>95% CI Upper</th><th>Cohen's d</th>
+            </tr>
+            <tr>
+                <td id="mdiff"></td><td id="ci-low"></td><td id="ci-high"></td><td id="cohen-d" class="highlight"></td>
+            </tr>
+        </table>
+        
+        <p id="conclusion" style="margin-top:20px; font-weight:bold; font-size:1.1em;"></p>
+    </div>
+</div>
+
+<script>
+    // Helper function to parse input strings (handles commas, spaces, and newlines)
+    function parseInput(inputStr) {
+        return inputStr.split(/[\s,]+/)
+            .map(item => parseFloat(item.trim()))
+            .filter(item => !isNaN(item));
+    }
+
+    // Helper to calculate Sum of Squares (SS)
+    function calcSS(arr, mean) {
+        return arr.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0);
+    }
+
+    function calculateAdvancedTTest() {
+        const type = document.getElementById('testType').value;
+        const g1 = parseInput(document.getElementById('group1').value);
+        const g2 = parseInput(document.getElementById('group2').value);
+        const resultsDiv = document.getElementById('results');
+
+        // Validation
+        if (g1.length < 2 || g2.length < 2) {
+            alert("Please enter at least two valid numbers for each group.");
+            return;
+        }
+        if (type === 'paired' && g1.length !== g2.length) {
+            alert("Paired samples must have the exact same number of data points in both groups (N1 must equal N2).");
+            return;
+        }
+
+        // Descriptives Group 1
+        const n1 = g1.length;
+        const m1 = jStat.mean(g1);
+        const ss1 = calcSS(g1, m1);
+        const v1 = ss1 / (n1 - 1);
+        const sd1 = Math.sqrt(v1);
+        const se1 = sd1 / Math.sqrt(n1);
+
+        // Descriptives Group 2
+        const n2 = g2.length;
+        const m2 = jStat.mean(g2);
+        const ss2 = calcSS(g2, m2);
+        const v2 = ss2 / (n2 - 1);
+        const sd2 = Math.sqrt(v2);
+        const se2 = sd2 / Math.sqrt(n2);
+
+        // Populate Descriptive Table
+        document.getElementById('n1').innerText = n1;
+        document.getElementById('m1').innerText = m1.toFixed(3);
+        document.getElementById('ss1').innerText = ss1.toFixed(3);
+        document.getElementById('v1').innerText = v1.toFixed(3);
+        document.getElementById('sd1').innerText = sd1.toFixed(3);
+        document.getElementById('se1').innerText = se1.toFixed(3);
+
+        document.getElementById('n2').innerText = n2;
+        document.getElementById('m2').innerText = m2.toFixed(3);
+        document.getElementById('ss2').innerText = ss2.toFixed(3);
+        document.getElementById('v2').innerText = v2.toFixed(3);
+        document.getElementById('sd2').innerText = sd2.toFixed(3);
+        document.getElementById('se2').innerText = se2.toFixed(3);
+
+        let tStat = 0, df = 0, seDiff = 0, cohensD = 0;
+        const mDiff = m1 - m2;
+
+        if (type === 'independent') {
+            df = n1 + n2 - 2;
+            // Pooled variance
+            const pooledVar = (ss1 + ss2) / df;
+            seDiff = Math.sqrt(pooledVar * (1/n1 + 1/n2));
+            tStat = mDiff / seDiff;
+            // Cohen's d for independent
+            cohensD = Math.abs(mDiff) / Math.sqrt(pooledVar);
+        } 
+        else if (type === 'paired') {
+            df = n1 - 1;
+            const diffs = g1.map((val, i) => val - g2[i]);
+            const mD = jStat.mean(diffs);
+            const sdD = jStat.stdev(diffs, true); // true = sample stdev
+            seDiff = sdD / Math.sqrt(n1);
+            tStat = mD / seDiff;
+            // Cohen's d for paired (mean of differences / SD of differences)
+            cohensD = Math.abs(mD) / sdD;
+        }
+
+        // P-values
+        const p2Tailed = (1 - jStat.studentt.cdf(Math.abs(tStat), df)) * 2;
+        const p1Tailed = p2Tailed / 2;
+
+        // Confidence Intervals (95%)
+        const tCrit = Math.abs(jStat.studentt.inv(0.025, df)); // Two-tailed 0.05
+        const marginOfError = tCrit * seDiff;
+        const ciLow = mDiff - marginOfError;
+        const ciHigh = mDiff + marginOfError;
+
+        // Populate T-Test & CI Tables
+        document.getElementById('t-stat').innerText = tStat.toFixed(4);
+        document.getElementById('df-stat').innerText = df;
+        document.getElementById('p1-stat').innerText = p1Tailed.toFixed(4);
+        document.getElementById('p2-stat').innerText = p2Tailed.toFixed(4);
+        
+        document.getElementById('mdiff').innerText = mDiff.toFixed(3);
+        document.getElementById('ci-low').innerText = ciLow.toFixed(3);
+        document.getElementById('ci-high').innerText = ciHigh.toFixed(3);
+        document.getElementById('cohen-d').innerText = cohensD.toFixed(3);
+
+        // Conclusion Logic
+        const conclusion = document.getElementById('conclusion');
+        if (p2Tailed < 0.05) {
+            conclusion.innerText = "Conclusion: The two-tailed difference is STATISTICALLY SIGNIFICANT (p < .05).";
+            conclusion.style.color = "#c0392b";
+        } else {
+            conclusion.innerText = "Conclusion: The two-tailed difference is NOT statistically significant (p >= .05).";
+            conclusion.style.color = "#7f8c8d";
+        }
+
+        resultsDiv.style.display = "block";
+    }
+</script>
+
+</body>
+</html>
