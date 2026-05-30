@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Divisibility Tester — MathTools</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#050508;--panel:#0e0e16;--border:#1a1a2e;--accent:#6c63ff;--text:#e8e8f0;--muted:#44445a;--yes:#43e97b;--no:#ff6584; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding:2rem 1rem 4rem;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 20% 20%,rgba(108,99,255,0.08) 0%,transparent 60%),linear-gradient(rgba(108,99,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,0.03) 1px,transparent 1px);background-size:auto,50px 50px,50px 50px;pointer-events:none;z-index:0;}
+  .wrap{position:relative;z-index:1;max-width:900px;margin:0 auto;}
+  .back{display:inline-flex;align-items:center;gap:0.5rem;color:var(--muted);font-size:0.8rem;text-decoration:none;letter-spacing:0.1em;margin-bottom:2rem;transition:color 0.2s;}
+  .back:hover{color:var(--accent);}
+  header{text-align:center;margin-bottom:2.5rem;}
+  h1{font-size:clamp(2.5rem,8vw,5rem);font-weight:800;letter-spacing:-0.03em;background:linear-gradient(135deg,#6c63ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+  .sub{color:var(--muted);font-size:0.75rem;letter-spacing:0.25em;font-family:'JetBrains Mono',monospace;margin-top:0.5rem;}
+  .input-zone{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1rem;align-items:center;flex-wrap:wrap;}
+  .num-input{flex:1;min-width:160px;background:var(--bg);border:1px solid var(--accent);color:var(--accent);font-family:'JetBrains Mono',monospace;font-size:2rem;padding:0.4rem 1rem;border-radius:8px;outline:none;transition:box-shadow 0.2s;}
+  .num-input:focus{box-shadow:0 0 0 2px var(--accent),0 0 20px rgba(108,99,255,0.2);}
+  .num-input::placeholder{color:var(--muted);}
+  .btn{background:var(--accent);color:#fff;border:none;font-family:'Syne',sans-serif;font-weight:700;font-size:0.85rem;padding:0.8rem 1.8rem;border-radius:8px;cursor:pointer;transition:transform 0.1s,box-shadow 0.2s;}
+  .btn:hover{box-shadow:0 0 20px rgba(108,99,255,0.5);transform:translateY(-1px);}
+  .clr{background:transparent;color:var(--muted);border:1px solid var(--border);font-family:'Syne',sans-serif;font-size:0.8rem;padding:0.8rem 1.2rem;border-radius:8px;cursor:pointer;transition:color 0.2s,border-color 0.2s;}
+  .clr:hover{color:#ff6584;border-color:#ff6584;}
+  .stats{display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+  .stat{font-size:0.7rem;letter-spacing:0.15em;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .stat span{font-size:1.2rem;font-family:'Syne',monospace;font-weight:700;}
+  .filters{display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;}
+  .fb{background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;padding:0.35rem 0.8rem;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+  .fb.active,.fb:hover{border-color:var(--accent);color:var(--accent);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:0.6rem;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:0.9rem;display:flex;flex-direction:column;gap:0.3rem;position:relative;overflow:hidden;transition:transform 0.15s,border-color 0.25s;}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--border);transition:background 0.25s;}
+  .card.yes{border-color:rgba(67,233,123,0.3);background:rgba(67,233,123,0.04);animation:pop 0.25s ease;}
+  .card.yes::before{background:var(--yes);}
+  .card.no{border-color:rgba(255,101,132,0.2);background:rgba(255,101,132,0.03);}
+  .card.no::before{background:var(--no);}
+  .card:hover{transform:translateY(-2px);}
+  @keyframes pop{0%{transform:scale(0.95);opacity:0.5;}60%{transform:scale(1.03);}100%{transform:scale(1);opacity:1;}}
+  .cd{font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;color:var(--muted);transition:color 0.25s;}
+  .card.yes .cd{color:var(--text);}
+  .cl{font-size:0.6rem;letter-spacing:0.2em;font-family:'JetBrains Mono',monospace;}
+  .card.yes .cl{color:var(--yes);}
+  .card.no .cl{color:var(--no);}
+  .cr{font-size:0.58rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+  .card.yes .cr{color:rgba(67,233,123,0.5);}
+  .empty{text-align:center;padding:4rem 2rem;color:var(--muted);}
+  .empty .big{font-size:5rem;font-weight:800;opacity:0.1;}
+  .empty p{font-size:0.75rem;letter-spacing:0.2em;font-family:'JetBrains Mono',monospace;margin-top:0.5rem;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Back to All Tools</a>
+  <header>
+    <h1>Divisibility Tester</h1>
+    <div class="sub">// test any number · divisors 1–50</div>
+  </header>
+  <div class="input-zone">
+    <input class="num-input" id="inp" type="number" placeholder="Enter number…" autofocus>
+    <button class="btn" onclick="run()">▶ Test</button>
+    <button class="clr" onclick="clr()">✕ Clear</button>
+  </div>
+  <div id="stats" style="display:none">
+    <div class="stats">
+      <div class="stat">TESTING: <span id="sn" style="color:#6c63ff">—</span></div>
+      <div class="stat">DIVISIBLE: <span id="sy" style="color:#43e97b">0</span></div>
+      <div class="stat">NOT: <span id="sno" style="color:#ff6584">0</span></div>
+    </div>
+    <div class="filters">
+      <button class="fb active" onclick="setF('all',this)">ALL</button>
+      <button class="fb" onclick="setF('yes',this)">✓ DIVISIBLE</button>
+      <button class="fb" onclick="setF('no',this)">✕ NOT DIV.</button>
+    </div>
+  </div>
+  <div id="out"><div class="empty"><div class="big">50</div><p>Enter a number and press Test</p></div></div>
+</div>
+<script>
+  let f='all',res=[];
+  document.getElementById('inp').addEventListener('keydown',e=>{if(e.key==='Enter')run();});
+  function run(){
+    const v=document.getElementById('inp').value.trim();
+    if(!v||isNaN(v))return;
+    const n=BigInt(v),a=n<0n?-n:n;
+    res=[];
+    for(let d=1;d<=50;d++){const r=Number(a%BigInt(d));res.push({d,ok:r===0,r});}
+    document.getElementById('sn').textContent=v;
+    document.getElementById('sy').textContent=res.filter(x=>x.ok).length;
+    document.getElementById('sno').textContent=res.filter(x=>!x.ok).length;
+    document.getElementById('stats').style.display='block';
+    render();
+  }
+  function render(){
+    const list=f==='yes'?res.filter(x=>x.ok):f==='no'?res.filter(x=>!x.ok):res;
+    if(!list.length){document.getElementById('out').innerHTML='<div class="empty"><div class="big">0</div><p>No results</p></div>';return;}
+    document.getElementById('out').innerHTML='<div class="grid">'+list.map(({d,ok,r})=>`<div class="card ${ok?'yes':'no'}"><div class="cd">${d}</div><div class="cl">${ok?'✓ DIV':'✕ NOT'}</div><div class="cr">rem: ${r}</div></div>`).join('')+'</div>';
+  }
+  function setF(v,b){f=v;document.querySelectorAll('.fb').forEach(x=>x.classList.remove('active'));b.classList.add('active');if(res.length)render();}
+  function clr(){document.getElementById('inp').value='';res=[];f='all';document.querySelectorAll('.fb').forEach((b,i)=>b.classList.toggle('active',i===0));document.getElementById('stats').style.display='none';document.getElementById('out').innerHTML='<div class="empty"><div class="big">50</div><p>Enter a number and press Test</p></div>';}
+</script>
+</body>
+</html>
