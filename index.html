@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MathTools — Free Number Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050508;
+    --panel: #0e0e16;
+    --border: #1a1a2e;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --accent4: #f7971e;
+    --accent5: #00d2ff;
+    --accent6: #ff4757;
+    --text: #e8e8f0;
+    --muted: #44445a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(108,99,255,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 30% at 80% 80%, rgba(255,101,132,0.06) 0%, transparent 60%),
+      linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
+    background-size: auto, auto, 50px 50px, 50px 50px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 1000px; margin: 0 auto; padding: 3rem 1.5rem 5rem; }
+
+  header { text-align: center; margin-bottom: 4rem; }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.5rem;
+  }
+  .logo-icon {
+    width: 48px; height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+  }
+  .logo-text {
+    font-size: 1.8rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  h1 {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    margin-bottom: 1rem;
+  }
+  h1 span { 
+    background: linear-gradient(135deg, var(--accent), var(--accent5));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Tools grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .tool-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.8rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .tool-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 16px 16px 0 0;
+    transition: opacity 0.2s;
+  }
+  .tool-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+
+  .c1::before { background: linear-gradient(90deg, #6c63ff, #a78bfa); }
+  .c2::before { background: linear-gradient(90deg, #43e97b, #38f9d7); }
+  .c3::before { background: linear-gradient(90deg, #f7971e, #ffd200); }
+  .c4::before { background: linear-gradient(90deg, #ff6584, #ff4757); }
+  .c5::before { background: linear-gradient(90deg, #00d2ff, #3a7bd5); }
+  .c6::before { background: linear-gradient(90deg, #f953c6, #b91d73); }
+
+  .c1:hover { border-color: rgba(108,99,255,0.4); }
+  .c2:hover { border-color: rgba(67,233,123,0.4); }
+  .c3:hover { border-color: rgba(247,151,30,0.4); }
+  .c4:hover { border-color: rgba(255,101,132,0.4); }
+  .c5:hover { border-color: rgba(0,210,255,0.4); }
+  .c6:hover { border-color: rgba(249,83,198,0.4); }
+
+  .tool-icon {
+    width: 52px; height: 52px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .ic1 { background: rgba(108,99,255,0.15); }
+  .ic2 { background: rgba(67,233,123,0.15); }
+  .ic3 { background: rgba(247,151,30,0.15); }
+  .ic4 { background: rgba(255,101,132,0.15); }
+  .ic5 { background: rgba(0,210,255,0.15); }
+  .ic6 { background: rgba(249,83,198,0.15); }
+
+  .tool-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .tool-desc {
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tool-arrow {
+    margin-top: auto;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s, gap 0.2s;
+  }
+  .tool-card:hover .tool-arrow { gap: 0.8rem; }
+
+  .c1:hover .tool-arrow { color: #6c63ff; }
+  .c2:hover .tool-arrow { color: #43e97b; }
+  .c3:hover .tool-arrow { color: #f7971e; }
+  .c4:hover .tool-arrow { color: #ff6584; }
+  .c5:hover .tool-arrow { color: #00d2ff; }
+  .c6:hover .tool-arrow { color: #f953c6; }
+
+  footer {
+    text-align: center;
+    margin-top: 4rem;
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧮</div>
+      <div class="logo-text">MathTools</div>
+    </div>
+    <h1>Free <span>Number Tools</span><br>All in One Place</h1>
+    <p class="subtitle">// 6 tools · 100% free · no signup needed</p>
+  </header>
+
+  <div class="grid">
+    <a class="tool-card c1" href="divisibility.html">
+      <div class="tool-icon ic1">➗</div>
+      <div class="tool-name">Divisibility Tester</div>
+      <div class="tool-desc">Test any number against all divisors from 1 to 50 instantly. See remainders for each.</div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
+    <a class="tool-card c2" href="prime.html">
+      <div class="tool-icon ic2">🔢</div>
+      <div class="tool-name">Prime Number Tester</div>
+      <div class="tool-desc">Check if any number is prime. Find all prime factors and get a full factorization.</div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
+    <a class="tool-card c3" href="percentage.html">
+      <div class="tool-icon ic3">💯</div>
+      <div class="tool-name">Percentage Calculator</div>
+      <div class="tool-desc">Calculate percentages, increases, decreases, and percentage differences easily.</div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
+    <a class="tool-card c4" href="number-checker.html">
+      <div class="tool-icon ic4">🔍</div>
+      <div class="tool-name">Number Checker</div>
+      <div class="tool-desc">Analyze any number: odd/even, positive/negative, perfect square, palindrome and more.</div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
+    <a class="tool-card c5" href="unit-converter.html">
+      <div class="tool-icon ic5">📏</div>
+      <div class="tool-name">Unit Converter</div>
+      <div class="tool-desc">Convert length, weight, temperature, area and volume units instantly.</div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
+    <a class="tool-card c6" href="calculator.html">
+      <div class="tool-icon ic6">🖩</div>
+      <div class="tool-name">Calculator</div>
+      <div class="tool-desc">Full-featured calculator with history, scientific functions and keyboard support.</div>
+      <div class="tool-arrow">Open Tool →</div>
+    </a>
+  </div>
+
+  <footer>© 2026 MathTools · Built with ♥ · Free Forever</footer>
+</div>
+</body>
+</html>
