@@ -253,6 +253,37 @@
   <div class="tool-desc">chek grammar. </div>
   <div class="tool-arrow">Open Tool →</div>
     </a>
+    <div style="text-align:center;padding:20px;">
+  <h3>❤️ Support Us</h3>
+
+  <button onclick="donate(9)">₹9</button>
+  <button onclick="donate(10)">₹10</button>
+  <button onclick="donate(49)">₹49</button>
+  <button onclick="donate(100)">₹100</button>
+
+  <br><br>
+
+  <input type="number" id="customAmount" placeholder="Custom Amount (₹)">
+  <button onclick="customDonate()">Donate</button>
+</div>
+
+<script>
+function donate(amount) {
+  window.location.href =
+    "upi://pay?pa=prasuramakalas-1@oksbi&pn=Prahallada%20Kalash&am=" +
+    amount +
+    "&cu=INR";
+}
+
+function customDonate() {
+  let amount = document.getElementById("customAmount").value;
+  if(amount && amount > 0){
+    donate(amount);
+  } else {
+    alert("Enter a valid amount");
+  }
+}
+</script>
   </div>
 
   <footer>© 2026 MathTools · Built with ♥ · Free Forever</footer>
