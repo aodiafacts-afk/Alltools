@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DocStore — Secure Document Shop</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f6f1;
+  --surface: #ffffff;
+  --border: #e8e2d9;
+  --text: #1a1714;
+  --muted: #7a7168;
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --success: #16a34a;
+  --success-light: #f0fdf4;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --upi: #6d28d9;
+  --upi-light: #f5f3ff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow: 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.15);
+  --radius: 16px;
+  --radius-sm: 8px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── PAGES ── */
+.page { display:none; min-height:100vh; }
+.page.active { display:block; }
+
+/* ══════════════════════════════════════
+   PAYMENT / SHOP PAGE
+══════════════════════════════════════ */
+.shop-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(12px);
+}
+
+.shop-logo {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shop-logo span { color: var(--accent); font-style: italic; }
+
+.shop-hero {
+  background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
+  padding: 4rem 1.5rem 5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.shop-hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.shop-hero h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  color: #fff;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.shop-hero p {
+  color: rgba(255,255,255,0.75);
+  font-size: 1.1rem;
+  max-width: 500px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.shop-main {
+  max-width: 900px;
+  margin: -2rem auto 0;
+  padding: 0 1.5rem 4rem;
+  position: relative;
+}
+
+/* PRODUCT CARDS */
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.25s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  box-shadow: var(--shadow);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.product-card.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+
+.product-check {
+  position: absolute; top: 1rem; right: 1rem;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 0.8rem;
+}
+
+.product-card.selected .product-check { display: flex; }
+
+.product-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.product-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+  padding-right: 1.5rem;
+}
+
+.product-desc {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.product-price {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  color: var(--accent);
+}
+
+.product-price small {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.empty-store {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 2px dashed var(--border);
+}
+
+.empty-store h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--muted);
+}
+
+/* PAYMENT CARD */
+.payment-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.payment-header {
+  background: linear-gradient(90deg, var(--upi), #7c3aed);
+  padding: 1.25rem 1.5rem;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.payment-header h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+}
+
+.payment-header p { font-size: 0.8rem; opacity: 0.8; }
+
+.payment-body { padding: 1.5rem; }
+
+.form-group { margin-bottom: 1.25rem; }
+
+.form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--bg);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  background: #fff;
+}
+
+/* UPI QR SECTION */
+.upi-qr-box {
+  background: linear-gradient(135deg, var(--upi-light), #ede9fe);
+  border: 1.5px solid #c4b5fd;
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.qr-code-img {
+  width: 160px; height: 160px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 3.5rem;
+  border: 3px solid #c4b5fd;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.qr-code-img img { width: 100%; height: 100%; object-fit: cover; }
+.qr-code-img .qr-placeholder { font-size: 3rem; }
+
+.upi-id-display {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--upi);
+  background: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+  border: 1.5px solid #c4b5fd;
+}
+
+.upi-instructions {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.upi-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 1rem 0;
+  text-align: left;
+}
+
+.upi-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.step-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--upi);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* AMOUNT BADGE */
+.amount-badge {
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.amount-badge .label { font-size: 0.8rem; opacity: 0.8; }
+.amount-badge .amount {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.8rem;
+}
+
+/* UTR INPUT AREA */
+.utr-section {
+  background: #fffbeb;
+  border: 1.5px solid #fcd34d;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.utr-section .section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--warning);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* BTN */
+.btn {
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: linear-gradient(90deg, var(--accent), #1d4ed8);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+}
+
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(37,99,235,0.4); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-success {
+  background: linear-gradient(90deg, var(--success), #15803d);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(22,163,74,0.3);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1.5px solid var(--border);
+  color: var(--text);
+}
+
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-sm { padding: 0.55rem 1rem; font-size: 0.85rem; width: auto; }
+
+/* SUCCESS PAGE */
+.success-screen {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.success-icon {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, var(--success), #15803d);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem;
+  margin: 0 auto 1.5rem;
+  box-shadow: 0 8px 24px rgba(22,163,74,0.3);
+  animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes bounceIn {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.success-screen h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--success);
+}
+
+.download-btn-wrap {
+  margin-top: 1.5rem;
+}
+
+/* TRUST BADGES */
+.trust-badges {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border);
+}
+
+.trust-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* PENDING BANNER */
+.pending-banner {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--warning);
+  text-align: center;
+  display: none;
+}
+
+/* ══════════════════════════════════════
+   ADMIN PANEL
+══════════════════════════════════════ */
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 240px;
+  background: #0f172a;
+  color: #94a3b8;
+  padding: 1.5rem 0;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0; left: -240px;
+  height: 100vh;
+  z-index: 100;
+  transition: left 0.3s;
+}
+
+.admin-sidebar.open { left: 0; }
+
+@media (min-width: 768px) {
+  .admin-sidebar { position: sticky; left: 0; }
+  .admin-content { margin-left: 0; }
+}
+
+.admin-brand {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid #1e293b;
+  margin-bottom: 1rem;
+}
+
+.admin-brand h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.2rem;
+  color: #fff;
+}
+
+.admin-brand p { font-size: 0.75rem; color: #64748b; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+  border-left: 3px solid transparent;
+}
+
+.nav-item:hover { background: #1e293b; color: #e2e8f0; }
+
+.nav-item.active {
+  background: #1e293b;
+  color: #fff;
+  border-left-color: #3b82f6;
+}
+
+.admin-content {
+  flex: 1;
+  overflow-x: hidden;
+}
+
+.admin-topbar {
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  position: sticky; top: 0; z-index: 40;
+}
+
+.admin-topbar h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+  flex: 1;
+}
+
+.hamburger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: block;
+}
+
+@media (min-width: 768px) { .hamburger { display: none; } }
+
+.admin-page { display: none; padding: 1.5rem; }
+.admin-page.active { display: block; }
+
+/* STATS */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.stat-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.stat-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  color: var(--text);
+}
+.stat-label { font-size: 0.78rem; color: var(--muted); }
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header h3 { font-weight: 600; font-size: 1rem; }
+.card-body { padding: 1.5rem; }
+
+/* PRODUCT UPLOAD */
+.upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg);
+}
+
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.upload-zone p { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+.upload-zone .upload-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th {
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  font-weight: 600;
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg); }
+
+/* BADGES */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-approved { background: #d1fae5; color: #065f46; }
+.badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-info { background: #dbeafe; color: #1e40af; }
+
+/* SWITCH */
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.switch input { opacity: 0; width: 0; height: 0; }
+
+.switch-track {
+  width: 40px; height: 22px;
+  background: #cbd5e1;
+  border-radius: 999px;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.switch-track::after {
+  content: '';
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 16px; height: 16px;
+  background: #fff;
+  border-radius: 50%;
+  transition: left 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.switch input:checked + .switch-track { background: var(--success); }
+.switch input:checked + .switch-track::after { left: 21px; }
+
+/* ALERT */
+.alert {
+  padding: 0.875rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.alert-success { background: var(--success-light); color: #065f46; border: 1px solid #6ee7b7; }
+.alert-danger { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; }
+.alert-info { background: var(--accent-light); color: #1e40af; border: 1px solid #93c5fd; }
+
+/* ORDERS TABLE ACTIONS */
+.action-btns { display: flex; gap: 0.4rem; }
+
+.btn-xs {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.btn-approve { background: #d1fae5; color: #065f46; }
+.btn-approve:hover { background: #6ee7b7; }
+.btn-reject { background: #fee2e2; color: #991b1b; }
+.btn-reject:hover { background: #fca5a5; }
+
+/* LOGIN */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0f172a, #1e3a8a);
+}
+
+.login-card {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.login-card h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.login-card p { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+
+/* MISC */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 1.5rem 0;
+}
+
+.text-muted { color: var(--muted); }
+.text-sm { font-size: 0.85rem; }
+
+.flex { display: flex; }
+.items-center { align-items: center; }
+.gap-2 { gap: 0.5rem; }
+.mt-1 { margin-top: 0.25rem; }
+
+.btn-danger-sm {
+  background: #fee2e2; color: #991b1b;
+  border: none; padding: 0.3rem 0.6rem;
+  border-radius: 4px; cursor: pointer;
+  font-size: 0.72rem; font-weight: 600;
+}
+
+.btn-danger-sm:hover { background: #fca5a5; }
+
+.upi-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #d1fae5;
+  color: #065f46;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.upi-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.4); }
+}
+
+.order-status-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.order-status-row:last-child { border-bottom: none; }
+
+/* OVERLAY */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 90;
+}
+
+.sidebar-overlay.show { display: block; }
+
+/* Tabs */
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+.tab {
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* notification toast */
+.toast {
+  position: fixed;
+  bottom: 1.5rem; right: 1.5rem;
+  background: #0f172a;
+  color: #fff;
+  padding: 0.875rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  display: none;
+  animation: slideUp 0.3s ease;
+}
+
+.toast.show { display: block; }
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .payment-body { padding: 1rem; }
+  .products-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ TOAST ══════ -->
+<div class="toast" id="toast">✅ Done!</div>
+
+<!-- ══════════════════════════════════════
+     PAGE: ADMIN LOGIN
+══════════════════════════════════════ -->
+<div class="page active" id="page-login">
+  <div class="login-page">
+    <div class="login-card">
+      <div style="font-size:2.5rem;margin-bottom:0.75rem">🔐</div>
+      <h2>Admin Login</h2>
+      <p>DocStore Control Panel</p>
+      <div class="form-group">
+        <label class="form-label">Admin Password</label>
+        <input type="password" class="form-input" id="admin-password" placeholder="Enter password…"
+          onkeydown="if(event.key==='Enter') adminLogin()">
+      </div>
+      <div id="login-error" style="color:var(--danger);font-size:0.82rem;margin-bottom:1rem;display:none">
+        ❌ Wrong password. Try again.
+      </div>
+      <button class="btn btn-primary" onclick="adminLogin()">🔓 Login to Admin</button>
+      <div class="divider"></div>
+      <button class="btn btn-outline" onclick="showShop()">🛍️ View Customer Shop</button>
+      <p style="font-size:0.72rem;color:var(--muted);margin-top:1rem">Default password: <strong>admin123</strong> — change it in Settings</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE: SHOP (CUSTOMER FACING)
+══════════════════════════════════════ -->
+<div class="page" id="page-shop">
+  <div class="shop-header">
+    <div class="shop-logo">📄 Doc<span>Store</span></div>
+    <button class="btn btn-outline btn-sm" onclick="showLogin()" style="width:auto">Admin ›</button>
+  </div>
+
+  <div class="shop-hero">
+    <h1>Premium Documents</h1>
+    <p>Instant delivery after payment. Secure • Fast • Reliable</p>
+  </div>
+
+  <div class="shop-main">
+
+    <!-- STEP 1: SELECT PRODUCT -->
+    <div id="shop-step-1">
+      <h3 style="font-family:'DM Serif Display',serif;font-size:1.3rem;margin-bottom:1rem;color:#fff;background:linear-gradient(90deg,var(--accent),#1d4ed8);padding:1rem 1.5rem;border-radius:var(--radius) var(--radius) 0 0;margin-top:0">
+        Step 1 — Choose a Document
+      </h3>
+      <div class="products-grid" id="products-grid">
+        <!-- filled by JS -->
+      </div>
+      <div id="empty-products" class="empty-store" style="display:none">
+        <div style="font-size:3rem;margin-bottom:1rem">📦</div>
+        <h3>No products yet</h3>
+        <p style="color:var(--muted);font-size:0.85rem">The admin hasn't added any documents yet.</p>
+      </div>
+      <button class="btn btn-primary" id="btn-proceed" onclick="proceedToPayment()" disabled>
+        Continue to Payment →
+      </button>
+    </div>
+
+    <!-- STEP 2: PAYMENT -->
+    <div id="shop-step-2" style="display:none">
+      <div class="payment-card">
+        <div class="payment-header">
+          <div>
+            <h2>💳 Complete Payment</h2>
+            <p>Scan & pay, then submit your transaction ID</p>
+          </div>
+        </div>
+        <div class="payment-body" id="payment-body">
+          <!-- filled by JS -->
+        </div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <button class="btn btn-outline" onclick="backToProducts()">← Back to Products</button>
+      </div>
+
+      <div class="trust-badges">
+        <div class="trust-badge">🔒 Secure Payment</div>
+        <div class="trust-badge">⚡ Instant Delivery</div>
+        <div class="trust-badge">✅ Verified Seller</div>
+        <div class="trust-badge">📧 Email Delivery</div>
+      </div>
+    </div>
+
+    <!-- STEP 3: SUCCESS -->
+    <div id="shop-step-3" style="display:none">
+      <div class="payment-card">
+        <div class="payment-body">
+          <div class="success-screen">
+            <div class="success-icon">✓</div>
+            <h2>Payment Submitted!</h2>
+            <p style="color:var(--muted);margin-bottom:1rem">Your payment is being verified by admin. You'll receive your document shortly.</p>
+            <div class="pending-banner" id="pending-banner" style="display:block">
+              ⏳ Awaiting admin approval — please check back in a few minutes
+            </div>
+            <div class="download-btn-wrap" id="download-wrap" style="display:none">
+              <button class="btn btn-success" onclick="downloadFile()" id="download-btn">
+                ⬇️ Download Your Document
+              </button>
+            </div>
+            <div style="margin-top:1.5rem">
+              <button class="btn btn-outline" onclick="buyAnother()">🔄 Buy Another Document</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /shop-main -->
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE: ADMIN PANEL
+══════════════════════════════════════ -->
+<div class="page" id="page-admin">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div class="admin-layout">
+
+    <!-- SIDEBAR -->
+    <div class="admin-sidebar" id="admin-sidebar">
+      <div class="admin-brand">
+        <h2>⚙️ DocStore</h2>
+        <p>Admin Panel</p>
+      </div>
+      <div class="nav-item active" onclick="showAdminTab('dashboard')" id="nav-dashboard">
+        📊 Dashboard
+      </div>
+      <div class="nav-item" onclick="showAdminTab('products')" id="nav-products">
+        📄 Products
+      </div>
+      <div class="nav-item" onclick="showAdminTab('orders')" id="nav-orders">
+        🛒 Orders
+        <span id="pending-count-badge" style="margin-left:auto;background:var(--danger);color:#fff;padding:0.1rem 0.45rem;border-radius:999px;font-size:0.7rem;display:none">0</span>
+      </div>
+      <div class="nav-item" onclick="showAdminTab('settings')" id="nav-settings">
+        ⚙️ Settings
+      </div>
+      <div class="nav-item" onclick="adminLogout()" style="margin-top:auto;color:#ef4444">
+        🚪 Logout
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="admin-content">
+      <div class="admin-topbar">
+        <button class="hamburger" onclick="toggleSidebar()">☰</button>
+        <h1 id="admin-page-title">Dashboard</h1>
+        <button class="btn btn-outline btn-sm" onclick="showShop()" style="width:auto">👁 View Shop</button>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="admin-page active" id="admin-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">🛒</div>
+            <div class="stat-value" id="stat-total-orders">0</div>
+            <div class="stat-label">Total Orders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value" id="stat-pending">0</div>
+            <div class="stat-label">Pending</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value" id="stat-approved">0</div>
+            <div class="stat-label">Approved</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📄</div>
+            <div class="stat-value" id="stat-products">0</div>
+            <div class="stat-label">Products</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>💰 Current UPI Setup</h3>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+              <div>
+                <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.3rem">Active UPI ID</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:600;color:var(--upi)" id="dash-upi-id">—</div>
+              </div>
+              <div>
+                <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.3rem">Merchant Name</div>
+                <div style="font-weight:600" id="dash-merchant">—</div>
+              </div>
+              <div class="upi-active-badge">
+                <div class="upi-dot"></div>
+                <span>Active</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>🕐 Recent Orders</h3>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Buyer</th>
+                  <th>Product</th>
+                  <th>Amount</th>
+                  <th>UTR / Ref</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="recent-orders-body">
+                <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No orders yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PRODUCTS -->
+      <div class="admin-page" id="admin-products">
+        <div class="card">
+          <div class="card-header">
+            <h3>➕ Add New Product</h3>
+          </div>
+          <div class="card-body">
+            <div id="add-product-alert" style="display:none"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div class="form-group">
+                <label class="form-label">Product Name *</label>
+                <input type="text" class="form-input" id="prod-name" placeholder="e.g. Resume Template Pack">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Price (₹) *</label>
+                <input type="number" class="form-input" id="prod-price" placeholder="e.g. 99">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Description</label>
+              <input type="text" class="form-input" id="prod-desc" placeholder="Short description for buyers">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Upload Document File (DOC/DOCX/PDF/ZIP) *</label>
+              <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()"
+                ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+                <div class="upload-icon">📁</div>
+                <div style="font-weight:500" id="upload-zone-text">Click to upload or drag & drop</div>
+                <p>DOC, DOCX, PDF, ZIP — max 10MB</p>
+              </div>
+              <input type="file" id="file-input" style="display:none" accept=".doc,.docx,.pdf,.zip,.rar"
+                onchange="handleFileSelect(this.files[0])">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Emoji Icon</label>
+              <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                <span class="emoji-opt" onclick="selectEmoji(this,'📄')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent" title="Document">📄</span>
+                <span class="emoji-opt" onclick="selectEmoji(this,'📋')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent">📋</span>
+                <span class="emoji-opt" onclick="selectEmoji(this,'📝')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent">📝</span>
+                <span class="emoji-opt" onclick="selectEmoji(this,'📊')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent">📊</span>
+                <span class="emoji-opt" onclick="selectEmoji(this,'📈')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent">📈</span>
+                <span class="emoji-opt" onclick="selectEmoji(this,'🎓')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent">🎓</span>
+                <span class="emoji-opt" onclick="selectEmoji(this,'💼')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent">💼</span>
+                <span class="emoji-opt" onclick="selectEmoji(this,'🏠')" style="font-size:1.5rem;cursor:pointer;padding:0.3rem;border-radius:6px;border:2px solid transparent">🏠</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="addProduct()" id="add-prod-btn">
+              ➕ Add Product
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3>📦 All Products</h3>
+            <span id="product-count-badge" class="badge badge-info">0 products</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Icon</th>
+                  <th>Name</th>
+                  <th>Price</th>
+                  <th>Description</th>
+                  <th>File</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="products-table-body">
+                <tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">No products added yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div class="admin-page" id="admin-orders">
+        <div class="tabs">
+          <div class="tab active" onclick="filterOrders('all',this)">All</div>
+          <div class="tab" onclick="filterOrders('pending',this)">⏳ Pending</div>
+          <div class="tab" onclick="filterOrders('approved',this)">✅ Approved</div>
+          <div class="tab" onclick="filterOrders('rejected',this)">❌ Rejected</div>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Buyer Name</th>
+                  <th>Email</th>
+                  <th>Product</th>
+                  <th>Amount</th>
+                  <th>UTR / Ref</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="orders-table-body">
+                <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">No orders yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="admin-page" id="admin-settings">
+
+        <div class="card">
+          <div class="card-header"><h3>💳 UPI Payment Settings</h3></div>
+          <div class="card-body">
+            <div id="upi-settings-alert" style="display:none"></div>
+            <div class="form-group">
+              <label class="form-label">UPI ID *</label>
+              <input type="text" class="form-input" id="set-upi-id" placeholder="yourname@upi or 9876543210@paytm">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div class="form-group">
+                <label class="form-label">Merchant / Display Name *</label>
+                <input type="text" class="form-input" id="set-merchant-name" placeholder="Your Name or Business">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Payment Note (optional)</label>
+                <input type="text" class="form-input" id="set-payment-note" placeholder="e.g. DocStore Purchase">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">QR Code Image URL (optional)</label>
+              <input type="text" class="form-input" id="set-qr-url" placeholder="https://your-qr-image.com/qr.png">
+              <p style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem">
+                💡 Upload your UPI QR to <a href="https://imgbb.com" target="_blank" style="color:var(--accent)">imgbb.com</a> (free) and paste the direct link here
+              </p>
+            </div>
+            <button class="btn btn-primary" onclick="saveUpiSettings()" style="max-width:250px">
+              💾 Save UPI Settings
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🔐 Change Admin Password</h3></div>
+          <div class="card-body">
+            <div id="pwd-alert" style="display:none"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+              <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" class="form-input" id="new-password" placeholder="Minimum 6 characters">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-input" id="confirm-password" placeholder="Repeat password">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="changePassword()" style="max-width:250px">
+              🔑 Update Password
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>🏪 Store Settings</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Store Name</label>
+              <input type="text" class="form-input" id="set-store-name" placeholder="e.g. DocStore">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Store Tagline</label>
+              <input type="text" class="form-input" id="set-store-tagline" placeholder="e.g. Premium Documents — Instant Delivery">
+            </div>
+            <button class="btn btn-primary" onclick="saveStoreSettings()" style="max-width:250px">
+              💾 Save Store Settings
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /settings -->
+    </div><!-- /admin-content -->
+  </div><!-- /admin-layout -->
+</div>
+
+<script>
+// ════════════════════════════════════
+// STORAGE HELPERS
+// ════════════════════════════════════
+function getLS(key, def) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; }
+}
+function setLS(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+// DEFAULTS
+function initDefaults() {
+  if (!localStorage.getItem('ds_password')) setLS('ds_password', 'admin123');
+  if (!localStorage.getItem('ds_upi')) setLS('ds_upi', { id: '', merchant: 'DocStore', note: 'DocStore Purchase', qrUrl: '' });
+  if (!localStorage.getItem('ds_products')) setLS('ds_products', []);
+  if (!localStorage.getItem('ds_orders')) setLS('ds_orders', []);
+  if (!localStorage.getItem('ds_store')) setLS('ds_store', { name: 'DocStore', tagline: 'Premium Documents — Instant Delivery' });
+}
+
+initDefaults();
+
+// ════════════════════════════════════
+// PAGE NAVIGATION
+// ════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showLogin() { showPage('login'); }
+function showShop() { renderShop(); showPage('shop'); }
+
+// ════════════════════════════════════
+// ADMIN AUTH
+// ════════════════════════════════════
+let adminLoggedIn = false;
+
+function adminLogin() {
+  const pwd = document.getElementById('admin-password').value;
+  const stored = getLS('ds_password', 'admin123');
+  if (pwd === stored) {
+    adminLoggedIn = true;
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('admin-password').value = '';
+    openAdmin();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+function adminLogout() {
+  adminLoggedIn = false;
+  showLogin();
+}
+
+function openAdmin() {
+  showPage('admin');
+  showAdminTab('dashboard');
+  refreshAdmin();
+}
+
+// ════════════════════════════════════
+// ADMIN TABS
+// ════════════════════════════════════
+const tabTitles = { dashboard:'Dashboard', products:'Products', orders:'Orders', settings:'Settings' };
+
+function showAdminTab(tab) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('admin-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  document.getElementById('admin-page-title').textContent = tabTitles[tab];
+  closeSidebar();
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'products') renderProductsTable();
+  if (tab === 'orders') renderOrdersTable('all');
+  if (tab === 'settings') loadSettings();
+}
+
+// Sidebar mobile
+function toggleSidebar() {
+  document.getElementById('admin-sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('admin-sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+
+// ════════════════════════════════════
+// PRODUCTS (ADMIN)
+// ════════════════════════════════════
+let selectedEmoji = '📄';
+let selectedFileData = null;
+let selectedFileName = '';
+
+function selectEmoji(el, emoji) {
+  document.querySelectorAll('.emoji-opt').forEach(e => e.style.border = '2px solid transparent');
+  el.style.border = '2px solid var(--accent)';
+  selectedEmoji = emoji;
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('upload-zone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFileSelect(file);
+}
+
+function handleFileSelect(file) {
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    showAlert('add-product-alert', 'danger', '❌ File too large. Max 10MB allowed.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    selectedFileData = ev.target.result;
+    selectedFileName = file.name;
+    document.getElementById('upload-zone-text').textContent = '✅ ' + file.name;
+    document.getElementById('upload-zone').style.borderColor = 'var(--success)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addProduct() {
+  const name = document.getElementById('prod-name').value.trim();
+  const price = document.getElementById('prod-price').value.trim();
+  const desc = document.getElementById('prod-desc').value.trim();
+
+  if (!name || !price) {
+    showAlert('add-product-alert', 'danger', '❌ Product name and price are required.');
+    return;
+  }
+  if (!selectedFileData) {
+    showAlert('add-product-alert', 'danger', '❌ Please upload a document file.');
+    return;
+  }
+
+  const products = getLS('ds_products', []);
+  products.push({
+    id: Date.now().toString(),
+    name, price: parseFloat(price), desc,
+    icon: selectedEmoji,
+    fileName: selectedFileName,
+    fileData: selectedFileData,
+    active: true,
+    createdAt: new Date().toISOString()
+  });
+  setLS('ds_products', products);
+
+  // Reset form
+  document.getElementById('prod-name').value = '';
+  document.getElementById('prod-price').value = '';
+  document.getElementById('prod-desc').value = '';
+  document.getElementById('upload-zone-text').textContent = 'Click to upload or drag & drop';
+  document.getElementById('upload-zone').style.borderColor = '';
+  selectedFileData = null;
+  selectedFileName = '';
+  document.getElementById('file-input').value = '';
+
+  showAlert('add-product-alert', 'success', '✅ Product added successfully!');
+  renderProductsTable();
+  refreshAdmin();
+  toast('Product added!');
+}
+
+function toggleProductStatus(id) {
+  const products = getLS('ds_products', []);
+  const p = products.find(x => x.id === id);
+  if (p) p.active = !p.active;
+  setLS('ds_products', products);
+  renderProductsTable();
+}
+
+function deleteProduct(id) {
+  if (!confirm('Delete this product? This cannot be undone.')) return;
+  let products = getLS('ds_products', []);
+  products = products.filter(x => x.id !== id);
+  setLS('ds_products', products);
+  renderProductsTable();
+  refreshAdmin();
+  toast('Product deleted');
+}
+
+function renderProductsTable() {
+  const products = getLS('ds_products', []);
+  const tbody = document.getElementById('products-table-body');
+  document.getElementById('product-count-badge').textContent = products.length + ' products';
+
+  if (!products.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">No products yet — add one above</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = products.map(p => `
+    <tr>
+      <td style="font-size:1.5rem">${p.icon}</td>
+      <td style="font-weight:600">${p.name}</td>
+      <td><strong>₹${p.price}</strong></td>
+      <td style="color:var(--muted);font-size:0.82rem">${p.desc || '—'}</td>
+      <td style="font-size:0.78rem;color:var(--muted)">${p.fileName}</td>
+      <td>
+        <label class="switch">
+          <input type="checkbox" ${p.active ? 'checked' : ''} onchange="toggleProductStatus('${p.id}')">
+          <div class="switch-track"></div>
+          <span>${p.active ? 'Active' : 'Hidden'}</span>
+        </label>
+      </td>
+      <td>
+        <button class="btn-danger-sm" onclick="deleteProduct('${p.id}')">🗑️ Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ════════════════════════════════════
+// ORDERS (ADMIN)
+// ════════════════════════════════════
+let currentOrderFilter = 'all';
+
+function renderOrdersTable(filter) {
+  currentOrderFilter = filter;
+  const orders = getLS('ds_orders', []);
+  const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter);
+  const tbody = document.getElementById('orders-table-body');
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:2rem">No ${filter === 'all' ? '' : filter} orders</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = [...filtered].reverse().map(o => `
+    <tr>
+      <td style="font-size:0.78rem;color:var(--muted)">${new Date(o.createdAt).toLocaleDateString('en-IN')}</td>
+      <td style="font-weight:600">${o.buyerName}</td>
+      <td style="font-size:0.82rem">${o.buyerEmail}</td>
+      <td>${o.productName}</td>
+      <td><strong>₹${o.amount}</strong></td>
+      <td><code style="font-size:0.78rem;background:var(--bg);padding:0.2rem 0.4rem;border-radius:4px">${o.utr}</code></td>
+      <td>${statusBadge(o.status)}</td>
+      <td>
+        <div class="action-btns">
+          ${o.status === 'pending' ? `
+            <button class="btn-xs btn-approve" onclick="approveOrder('${o.id}')">✅ Approve</button>
+            <button class="btn-xs btn-reject" onclick="rejectOrder('${o.id}')">❌ Reject</button>
+          ` : `<span style="font-size:0.78rem;color:var(--muted)">—</span>`}
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterOrders(filter, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  renderOrdersTable(filter);
+}
+
+function approveOrder(id) {
+  const orders = getLS('ds_orders', []);
+  const o = orders.find(x => x.id === id);
+  if (o) o.status = 'approved';
+  setLS('ds_orders', orders);
+  renderOrdersTable(currentOrderFilter);
+  renderDashboard();
+  toast('Order approved! Buyer can now download.');
+}
+
+function rejectOrder(id) {
+  const orders = getLS('ds_orders', []);
+  const o = orders.find(x => x.id === id);
+  if (o) o.status = 'rejected';
+  setLS('ds_orders', orders);
+  renderOrdersTable(currentOrderFilter);
+  renderDashboard();
+  toast('Order rejected.');
+}
+
+function statusBadge(s) {
+  const map = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+  const icons = { pending: '⏳', approved: '✅', rejected: '❌' };
+  return `<span class="badge ${map[s]}">${icons[s]} ${s}</span>`;
+}
+
+// ════════════════════════════════════
+// SETTINGS (ADMIN)
+// ════════════════════════════════════
+function loadSettings() {
+  const upi = getLS('ds_upi', {});
+  document.getElementById('set-upi-id').value = upi.id || '';
+  document.getElementById('set-merchant-name').value = upi.merchant || '';
+  document.getElementById('set-payment-note').value = upi.note || '';
+  document.getElementById('set-qr-url').value = upi.qrUrl || '';
+
+  const store = getLS('ds_store', {});
+  document.getElementById('set-store-name').value = store.name || '';
+  document.getElementById('set-store-tagline').value = store.tagline || '';
+}
+
+function saveUpiSettings() {
+  const id = document.getElementById('set-upi-id').value.trim();
+  const merchant = document.getElementById('set-merchant-name').value.trim();
+  if (!id || !merchant) {
+    showAlert('upi-settings-alert', 'danger', '❌ UPI ID and Merchant Name are required.');
+    return;
+  }
+  setLS('ds_upi', {
+    id,
+    merchant,
+    note: document.getElementById('set-payment-note').value.trim() || 'DocStore Purchase',
+    qrUrl: document.getElementById('set-qr-url').value.trim()
+  });
+  showAlert('upi-settings-alert', 'success', '✅ UPI settings saved!');
+  refreshAdmin();
+  toast('UPI settings saved!');
+}
+
+function saveStoreSettings() {
+  setLS('ds_store', {
+    name: document.getElementById('set-store-name').value.trim() || 'DocStore',
+    tagline: document.getElementById('set-store-tagline').value.trim()
+  });
+  toast('Store settings saved!');
+}
+
+function changePassword() {
+  const np = document.getElementById('new-password').value;
+  const cp = document.getElementById('confirm-password').value;
+  if (np.length < 6) {
+    showAlert('pwd-alert', 'danger', '❌ Password must be at least 6 characters.');
+    return;
+  }
+  if (np !== cp) {
+    showAlert('pwd-alert', 'danger', '❌ Passwords do not match.');
+    return;
+  }
+  setLS('ds_password', np);
+  document.getElementById('new-password').value = '';
+  document.getElementById('confirm-password').value = '';
+  showAlert('pwd-alert', 'success', '✅ Password updated!');
+  toast('Password changed!');
+}
+
+// ════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════
+function renderDashboard() {
+  const orders = getLS('ds_orders', []);
+  const products = getLS('ds_products', []);
+  const pending = orders.filter(o => o.status === 'pending').length;
+  const approved = orders.filter(o => o.status === 'approved').length;
+
+  document.getElementById('stat-total-orders').textContent = orders.length;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-approved').textContent = approved;
+  document.getElementById('stat-products').textContent = products.length;
+
+  // Pending badge
+  const badge = document.getElementById('pending-count-badge');
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
+  else { badge.style.display = 'none'; }
+
+  // UPI
+  const upi = getLS('ds_upi', {});
+  document.getElementById('dash-upi-id').textContent = upi.id || 'Not set — go to Settings';
+  document.getElementById('dash-merchant').textContent = upi.merchant || '—';
+
+  // Recent orders
+  const tbody = document.getElementById('recent-orders-body');
+  if (!orders.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:2rem">No orders yet</td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...orders].reverse().slice(0, 10).map(o => `
+    <tr>
+      <td style="font-weight:600">${o.buyerName}</td>
+      <td>${o.productName}</td>
+      <td><strong>₹${o.amount}</strong></td>
+      <td><code style="font-size:0.78rem">${o.utr}</code></td>
+      <td>${statusBadge(o.status)}</td>
+      <td>
+        ${o.status === 'pending' ? `
+          <div class="action-btns">
+            <button class="btn-xs btn-approve" onclick="approveOrder('${o.id}');renderDashboard()">✅</button>
+            <button class="btn-xs btn-reject" onclick="rejectOrder('${o.id}');renderDashboard()">❌</button>
+          </div>
+        ` : '—'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function refreshAdmin() {
+  renderDashboard();
+  const badge = document.getElementById('pending-count-badge');
+  const pending = getLS('ds_orders', []).filter(o => o.status === 'pending').length;
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
+  else badge.style.display = 'none';
+}
+
+// ════════════════════════════════════
+// SHOP (CUSTOMER)
+// ════════════════════════════════════
+let selectedProduct = null;
+let currentOrderId = null;
+
+function renderShop() {
+  const store = getLS('ds_store', { name: 'DocStore', tagline: 'Premium Documents — Instant Delivery' });
+  const products = getLS('ds_products', []).filter(p => p.active);
+  const grid = document.getElementById('products-grid');
+  const empty = document.getElementById('empty-products');
+
+  if (!products.length) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = products.map(p => `
+      <div class="product-card" id="pc-${p.id}" onclick="selectProduct('${p.id}')">
+        <div class="product-check">✓</div>
+        <div class="product-icon">${p.icon}</div>
+        <div class="product-name">${p.name}</div>
+        <div class="product-desc">${p.desc || 'Premium document — instant delivery after payment'}</div>
+        <div class="product-price">₹${p.price} <small>one-time</small></div>
+      </div>
+    `).join('');
+  }
+
+  // Reset steps
+  document.getElementById('shop-step-1').style.display = 'block';
+  document.getElementById('shop-step-2').style.display = 'none';
+  document.getElementById('shop-step-3').style.display = 'none';
+  selectedProduct = null;
+  document.getElementById('btn-proceed').disabled = true;
+}
+
+function selectProduct(id) {
+  document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('pc-' + id);
+  if (card) card.classList.add('selected');
+  const products = getLS('ds_products', []);
+  selectedProduct = products.find(p => p.id === id);
+  document.getElementById('btn-proceed').disabled = false;
+}
+
+function proceedToPayment() {
+  if (!selectedProduct) return;
+  const upi = getLS('ds_upi', {});
+
+  if (!upi.id) {
+    alert('Payment not configured yet. Please contact the seller.');
+    return;
+  }
+
+  const upiLink = `upi://pay?pa=${encodeURIComponent(upi.id)}&pn=${encodeURIComponent(upi.merchant)}&am=${selectedProduct.price}&cu=INR&tn=${encodeURIComponent(upi.note || 'DocStore')}`;
+
+  document.getElementById('payment-body').innerHTML = `
+    <div class="amount-badge">
+      <div><div class="label">Amount to Pay</div><div class="amount">₹${selectedProduct.price}</div></div>
+      <div style="text-align:right">
+        <div class="label">For</div>
+        <div style="font-weight:600">${selectedProduct.name}</div>
+      </div>
+    </div>
+
+    <div class="upi-qr-box">
+      <div class="qr-code-img">
+        ${upi.qrUrl
+          ? `<img src="${upi.qrUrl}" alt="UPI QR Code" onerror="this.parentElement.innerHTML='<div class=\\'qr-placeholder\\'>📲</div>'">`
+          : '<div class="qr-placeholder">📲</div>'
+        }
+      </div>
+      <div class="upi-id-display">${upi.id}</div>
+      <p style="font-size:0.82rem;color:var(--upi);font-weight:600;margin-bottom:0.75rem">${upi.merchant}</p>
+      
+      <div class="upi-steps">
+        <div class="upi-step"><div class="step-num">1</div> Open any UPI app (PhonePe, GPay, Paytm, BHIM)</div>
+        <div class="upi-step"><div class="step-num">2</div> Scan the QR code above OR send to UPI ID</div>
+        <div class="upi-step"><div class="step-num">3</div> Enter exact amount: <strong>₹${selectedProduct.price}</strong></div>
+        <div class="upi-step"><div class="step-num">4</div> Copy the <strong>UTR / Transaction ID</strong> after payment</div>
+        <div class="upi-step"><div class="step-num">5</div> Fill the form below and submit</div>
+      </div>
+
+      <a href="${upiLink}" style="display:inline-block;background:var(--upi);color:#fff;padding:0.65rem 1.5rem;border-radius:999px;font-size:0.85rem;text-decoration:none;font-weight:600;margin-top:0.5rem">
+        📲 Open UPI App
+      </a>
+    </div>
+
+    <div class="utr-section">
+      <div class="section-title">⚠️ After Payment — Submit Details</div>
+      <div class="form-group">
+        <label class="form-label">Your Name *</label>
+        <input type="text" class="form-input" id="buyer-name" placeholder="Full name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Email *</label>
+        <input type="email" class="form-input" id="buyer-email" placeholder="you@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">UTR / Transaction Reference Number *</label>
+        <input type="text" class="form-input" id="buyer-utr" placeholder="12-digit UTR or transaction ID"
+          style="font-family:'JetBrains Mono',monospace">
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:0.4rem">
+          💡 Find this in your UPI app under the payment receipt
+        </p>
+      </div>
+      <div id="payment-submit-alert" style="display:none;margin-top:0.75rem"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="submitPayment()">
+      🚀 Submit Payment for Verification
+    </button>
+  `;
+
+  document.getElementById('shop-step-1').style.display = 'none';
+  document.getElementById('shop-step-2').style.display = 'block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function backToProducts() {
+  document.getElementById('shop-step-1').style.display = 'block';
+  document.getElementById('shop-step-2').style.display = 'none';
+}
+
+function submitPayment() {
+  const name = document.getElementById('buyer-name').value.trim();
+  const email = document.getElementById('buyer-email').value.trim();
+  const utr = document.getElementById('buyer-utr').value.trim();
+
+  if (!name || !email || !utr) {
+    showAlert('payment-submit-alert', 'danger', '❌ Please fill all fields — name, email, and UTR.');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showAlert('payment-submit-alert', 'danger', '❌ Please enter a valid email address.');
+    return;
+  }
+
+  // Check duplicate UTR
+  const orders = getLS('ds_orders', []);
+  if (orders.find(o => o.utr === utr)) {
+    showAlert('payment-submit-alert', 'danger', '❌ This UTR has already been submitted. Please check again.');
+    return;
+  }
+
+  const orderId = 'ORD-' + Date.now();
+  currentOrderId = orderId;
+
+  orders.push({
+    id: orderId,
+    buyerName: name,
+    buyerEmail: email,
+    utr,
+    productId: selectedProduct.id,
+    productName: selectedProduct.name,
+    amount: selectedProduct.price,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  });
+  setLS('ds_orders', orders);
+
+  // Show success step
+  document.getElementById('shop-step-2').style.display = 'none';
+  document.getElementById('shop-step-3').style.display = 'block';
+  document.getElementById('pending-banner').style.display = 'block';
+  document.getElementById('download-wrap').style.display = 'none';
+
+  // Poll for approval every 5 seconds
+  pollOrderStatus(orderId);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function pollOrderStatus(orderId) {
+  const poll = setInterval(() => {
+    const orders = getLS('ds_orders', []);
+    const order = orders.find(o => o.id === orderId);
+    if (!order) { clearInterval(poll); return; }
+
+    if (order.status === 'approved') {
+      clearInterval(poll);
+      document.getElementById('pending-banner').style.display = 'none';
+      document.getElementById('download-wrap').style.display = 'block';
+    } else if (order.status === 'rejected') {
+      clearInterval(poll);
+      document.getElementById('pending-banner').innerHTML = '❌ Your payment was rejected. Please contact support.';
+      document.getElementById('pending-banner').style.background = '#fef2f2';
+      document.getElementById('pending-banner').style.borderColor = '#fca5a5';
+      document.getElementById('pending-banner').style.color = 'var(--danger)';
+    }
+  }, 3000);
+}
+
+function downloadFile() {
+  const orders = getLS('ds_orders', []);
+  const order = orders.find(o => o.id === currentOrderId);
+  if (!order) return;
+
+  const products = getLS('ds_products', []);
+  const product = products.find(p => p.id === order.productId);
+  if (!product || !product.fileData) {
+    alert('File not found. Please contact admin.');
+    return;
+  }
+
+  // Trigger download
+  const a = document.createElement('a');
+  a.href = product.fileData;
+  a.download = product.fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+function buyAnother() {
+  selectedProduct = null;
+  currentOrderId = null;
+  renderShop();
+}
+
+// ════════════════════════════════════
+// UTILS
+// ════════════════════════════════════
+function showAlert(elId, type, msg) {
+  const el = document.getElementById(elId);
+  el.className = 'alert alert-' + type;
+  el.textContent = msg;
+  el.style.display = 'flex';
+  setTimeout(() => { el.style.display = 'none'; }, 5000);
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✅ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+// Show login by default
+showPage('login');
+</script>
+</body>
+</html>
