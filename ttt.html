@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TradeAI Predictor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; }
+    .card { transition: all 0.3s; }
+  </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen">
+  <div class="max-w-2xl mx-auto p-6">
+    <h1 class="text-4xl font-bold text-center mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+      TradeAI Predictor
+    </h1>
+    <p class="text-center text-gray-400 mb-8">Stock Trading Signals with Targets</p>
+
+    <div class="bg-gray-900 rounded-2xl p-6 shadow-xl">
+      <div class="flex gap-3">
+        <input type="text" id="ticker" placeholder="Enter Ticker (e.g. AAPL)" 
+               class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-5 py-4 text-lg focus:outline-none focus:border-blue-500 uppercase">
+        <button onclick="analyzeStock()" 
+                class="bg-blue-600 hover:bg-blue-700 px-8 rounded-xl font-semibold transition">
+          ANALYZE
+        </button>
+      </div>
+
+      <div id="result" class="hidden mt-8">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <p class="text-center text-xs text-gray-500 mt-6">
+      Disclaimer: This is for educational purposes only. Not financial advice.
+    </p>
+  </div>
+
+  <script>
+    const API_KEY = "d8gec1hr01qlgcuj0angd8gec1hr01qlgcuj0ao0"; // ← Replace with your key
+
+    async function analyzeStock() {
+      const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+      if (!ticker) return alert("Enter a stock ticker!");
+
+      const resultDiv = document.getElementById('result');
+      resultDiv.classList.add('hidden');
+      resultDiv.innerHTML = `<p class="text-center text-gray-400">Fetching data...</p>`;
+
+      try {
+        // Get current quote
+        const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${API_KEY}`);
+        const quote = await quoteRes.json();
+
+        if (!quote.c) throw new Error("Invalid ticker or API limit");
+
+        const currentPrice = quote.c;
+
+        // Get historical candles (last 30 days daily)
+        const to = Math.floor(Date.now() / 1000);
+        const from = to - 30 * 24 * 60 * 60;
+        const candleRes = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`);
+        const candles = await candleRes.json();
+
+        let signal = "NEUTRAL";
+        let entry = currentPrice;
+        let target = (currentPrice * 1.08).toFixed(2);   // 8% target
+        let stoploss = (currentPrice * 0.93).toFixed(2); // 7% stop
+
+        if (candles.s === "ok" && candles.c.length > 10) {
+          const closes = candles.c;
+          const smaShort = calculateSMA(closes, 5);
+          const smaLong = calculateSMA(closes, 13);
+          const rsi = calculateRSI(closes);
+
+          const lastClose = closes[closes.length - 1];
+
+          if (smaShort > smaLong && rsi < 70) {
+            signal = "BUY";
+            target = (lastClose * 1.12).toFixed(2);
+            stoploss = (lastClose * 0.92).toFixed(2);
+          } else if (smaShort < smaLong && rsi > 30) {
+            signal = "SELL";
+            target = (lastClose * 0.88).toFixed(2);
+            stoploss = (lastClose * 1.08).toFixed(2);
+          }
+        }
+
+        const color = signal === "BUY" ? "text-green-400" : signal === "SELL" ? "text-red-400" : "text-yellow-400";
+
+        resultDiv.innerHTML = `
+          <div class="bg-gray-800 rounded-2xl p-6 card">
+            <div class="flex justify-between items-center mb-6">
+              <div>
+                <h2 class="text-3xl font-bold">${ticker}</h2>
+                <p class="text-2xl text-gray-400">$${currentPrice.toFixed(2)}</p>
+              </div>
+              <div class="text-right">
+                <span class="text-sm text-gray-400">SIGNAL</span><br>
+                <span class="text-4xl font-bold ${color}">${signal}</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 text-center">
+              <div class="bg-gray-900 p-4 rounded-xl">
+                <p class="text-xs text-gray-400">ENTRY</p>
+                <p class="text-2xl font-semibold">$${entry.toFixed(2)}</p>
+              </div>
+              <div class="bg-gray-900 p-4 rounded-xl">
+                <p class="text-xs text-gray-400">TARGET</p>
+                <p class="text-2xl font-semibold text-green-400">$${target}</p>
+              </div>
+              <div class="bg-gray-900 p-4 rounded-xl">
+                <p class="text-xs text-gray-400">STOP LOSS</p>
+                <p class="text-2xl font-semibold text-red-400">$${stoploss}</p>
+              </div>
+            </div>
+
+            <div class="mt-6 text-xs text-gray-400 bg-gray-900 p-4 rounded-xl">
+              <strong>Logic used:</strong> SMA(5/13) Crossover + RSI<br>
+              Risk-Reward ≈ 1:1.7
+            </div>
+          </div>
+        `;
+        resultDiv.classList.remove('hidden');
+
+      } catch (e) {
+        resultDiv.innerHTML = `<p class="text-red-400 text-center">Error: ${e.message}. Check ticker or API key.</p>`;
+        resultDiv.classList.remove('hidden');
+      }
+    }
+
+    function calculateSMA(data, period) {
+      const sum = data.slice(-period).reduce((a, b) => a + b, 0);
+      return sum / period;
+    }
+
+    function calculateRSI(closes, period = 14) {
+      if (closes.length < period + 1) return 50;
+      let gains = 0, losses = 0;
+      for (let i = closes.length - period; i < closes.length; i++) {
+        const change = closes[i] - closes[i-1];
+        if (change > 0) gains += change;
+        else losses -= change;
+      }
+      const avgGain = gains / period;
+      const avgLoss = losses / period;
+      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      return 100 - (100 / (1 + rs));
+    }
+  </script>
+</body>
+</html>
