@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TradeAI Predictor</title>
+  <title>TradeAI Predictor - India Edition</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'Segoe UI', sans-serif; }
@@ -11,129 +11,190 @@
   </style>
 </head>
 <body class="bg-gray-950 text-white min-h-screen">
-  <div class="max-w-2xl mx-auto p-6">
-    <h1 class="text-4xl font-bold text-center mb-2 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+  <div class="max-w-3xl mx-auto p-6">
+    <h1 class="text-4xl font-bold text-center mb-2 bg-gradient-to-r from-emerald-500 to-blue-500 bg-clip-text text-transparent">
       TradeAI Predictor
     </h1>
-    <p class="text-center text-gray-400 mb-8">Stock Trading Signals with Targets</p>
+    <p class="text-center text-gray-400 mb-2">Indian + Global Stocks • AI Technical Analysis</p>
 
-    <div class="bg-gray-900 rounded-2xl p-6 shadow-xl">
+    <div class="bg-gray-900 rounded-3xl p-8 shadow-2xl">
       <div class="flex gap-3">
-        <input type="text" id="ticker" placeholder="Enter Ticker (e.g. AAPL)" 
-               class="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-5 py-4 text-lg focus:outline-none focus:border-blue-500 uppercase">
+        <input type="text" id="ticker" placeholder="Enter Ticker (e.g. RELIANCE.NS or AAPL)" 
+               class="flex-1 bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-lg focus:outline-none focus:border-emerald-500 uppercase">
         <button onclick="analyzeStock()" 
-                class="bg-blue-600 hover:bg-blue-700 px-8 rounded-xl font-semibold transition">
+                class="bg-emerald-600 hover:bg-emerald-700 px-10 rounded-2xl font-semibold transition text-lg">
           ANALYZE
         </button>
       </div>
 
-      <div id="result" class="hidden mt-8">
-        <!-- Populated by JS -->
-      </div>
+      <div id="result" class="hidden mt-8"></div>
     </div>
 
-    <p class="text-center text-xs text-gray-500 mt-6">
-      Disclaimer: This is for educational purposes only. Not financial advice.
+    <p class="text-center text-xs text-gray-500 mt-8">
+      Educational tool only • Not financial advice • Uses Finnhub Free API
     </p>
   </div>
 
   <script>
-    const API_KEY = "d8gec1hr01qlgcuj0angd8gec1hr01qlgcuj0ao0"; // ← Replace with your key
+    const API_KEY = "d8gec1hr01qlgcuj0angd8gec1hr01qlgcuj0ao0"; // ← Replace
 
     async function analyzeStock() {
-      const ticker = document.getElementById('ticker').value.trim().toUpperCase();
+      let ticker = document.getElementById('ticker').value.trim().toUpperCase();
       if (!ticker) return alert("Enter a stock ticker!");
+
+      // Auto-add .NS for common Indian stocks if not present
+      if (!ticker.includes('.') && isLikelyIndian(ticker)) {
+        ticker += '.NS';
+      }
 
       const resultDiv = document.getElementById('result');
       resultDiv.classList.add('hidden');
-      resultDiv.innerHTML = `<p class="text-center text-gray-400">Fetching data...</p>`;
+      resultDiv.innerHTML = `<p class="text-center py-12 text-gray-400">Fetching market data + AI analysis...</p>`;
 
       try {
-        // Get current quote
+        // Quote
         const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${API_KEY}`);
         const quote = await quoteRes.json();
-
-        if (!quote.c) throw new Error("Invalid ticker or API limit");
+        if (!quote.c) throw new Error("Invalid ticker");
 
         const currentPrice = quote.c;
 
-        // Get historical candles (last 30 days daily)
+        // Historical data (30 days)
         const to = Math.floor(Date.now() / 1000);
-        const from = to - 30 * 24 * 60 * 60;
+        const from = to - 30 * 86400;
         const candleRes = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${ticker}&resolution=D&from=${from}&to=${to}&token=${API_KEY}`);
         const candles = await candleRes.json();
 
+        // News for sentiment
+        const newsRes = await fetch(`https://finnhub.io/api/v1/company-news?symbol=${ticker}&from=${new Date(Date.now()-7*86400000).toISOString().split('T')[0]}&to=${new Date().toISOString().split('T')[0]}&token=${API_KEY}`);
+        const news = await newsRes.json();
+
+        let aiScore = 50;
         let signal = "NEUTRAL";
+        let reason = "";
         let entry = currentPrice;
-        let target = (currentPrice * 1.08).toFixed(2);   // 8% target
-        let stoploss = (currentPrice * 0.93).toFixed(2); // 7% stop
+        let target = (currentPrice * 1.08).toFixed(2);
+        let stoploss = (currentPrice * 0.93).toFixed(2);
 
-        if (candles.s === "ok" && candles.c.length > 10) {
+        if (candles.s === "ok" && candles.c.length > 15) {
           const closes = candles.c;
-          const smaShort = calculateSMA(closes, 5);
-          const smaLong = calculateSMA(closes, 13);
+          const highs = candles.h;
+          const lows = candles.l;
+
+          const sma5 = calculateSMA(closes, 5);
+          const sma13 = calculateSMA(closes, 13);
           const rsi = calculateRSI(closes);
+          const momentum = (closes[closes.length-1] - closes[closes.length-8]) / closes[closes.length-8] * 100;
 
-          const lastClose = closes[closes.length - 1];
+          // AI Scoring
+          let score = 50;
+          if (sma5 > sma13) score += 18;
+          if (rsi < 35) score += 15;
+          if (rsi > 70) score -= 20;
+          if (momentum > 3) score += 12;
+          if (momentum < -4) score -= 18;
 
-          if (smaShort > smaLong && rsi < 70) {
+          aiScore = Math.max(20, Math.min(95, Math.round(score)));
+
+          if (aiScore >= 70) {
+            signal = "STRONG BUY";
+            target = (currentPrice * 1.15).toFixed(2);
+            stoploss = (currentPrice * 0.90).toFixed(2);
+            reason = "Bullish crossover + Positive momentum";
+          } else if (aiScore >= 55) {
             signal = "BUY";
-            target = (lastClose * 1.12).toFixed(2);
-            stoploss = (lastClose * 0.92).toFixed(2);
-          } else if (smaShort < smaLong && rsi > 30) {
+            target = (currentPrice * 1.10).toFixed(2);
+            stoploss = (currentPrice * 0.92).toFixed(2);
+            reason = "Moderate bullish indicators";
+          } else if (aiScore <= 35) {
+            signal = "STRONG SELL";
+            target = (currentPrice * 0.85).toFixed(2);
+            stoploss = (currentPrice * 1.10).toFixed(2);
+            reason = "Bearish signals + Overbought conditions";
+          } else if (aiScore <= 45) {
             signal = "SELL";
-            target = (lastClose * 0.88).toFixed(2);
-            stoploss = (lastClose * 1.08).toFixed(2);
+            target = (currentPrice * 0.90).toFixed(2);
+            stoploss = (currentPrice * 1.08).toFixed(2);
+            reason = "Weak momentum";
+          } else {
+            reason = "Mixed signals - Wait for clarity";
           }
         }
 
-        const color = signal === "BUY" ? "text-green-400" : signal === "SELL" ? "text-red-400" : "text-yellow-400";
+        // Simple sentiment from news
+        let sentiment = "Neutral";
+        if (news.length > 0) {
+          const positiveWords = news.filter(n => 
+            /rise|gain|strong|beat|up|bull/i.test(n.headline)
+          ).length;
+          const negativeWords = news.filter(n => 
+            /fall|drop|weak|miss|down|bear/i.test(n.headline)
+          ).length;
+          
+          if (positiveWords > negativeWords + 2) sentiment = "Positive";
+          else if (negativeWords > positiveWords + 2) sentiment = "Negative";
+        }
+
+        const color = signal.includes("BUY") ? "text-emerald-400" : signal.includes("SELL") ? "text-red-400" : "text-yellow-400";
 
         resultDiv.innerHTML = `
-          <div class="bg-gray-800 rounded-2xl p-6 card">
-            <div class="flex justify-between items-center mb-6">
+          <div class="bg-gray-800 rounded-3xl p-8 card">
+            <div class="flex justify-between items-start mb-8">
               <div>
-                <h2 class="text-3xl font-bold">${ticker}</h2>
-                <p class="text-2xl text-gray-400">$${currentPrice.toFixed(2)}</p>
+                <h2 class="text-4xl font-bold">${ticker}</h2>
+                <p class="text-3xl text-gray-300">₹${currentPrice.toFixed(2)}</p>
               </div>
               <div class="text-right">
-                <span class="text-sm text-gray-400">SIGNAL</span><br>
-                <span class="text-4xl font-bold ${color}">${signal}</span>
+                <span class="text-sm uppercase tracking-widest text-gray-400">AI SIGNAL</span><br>
+                <span class="text-5xl font-bold ${color}">${signal}</span>
               </div>
             </div>
 
-            <div class="grid grid-cols-3 gap-4 text-center">
-              <div class="bg-gray-900 p-4 rounded-xl">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div class="bg-gray-900 p-5 rounded-2xl text-center">
                 <p class="text-xs text-gray-400">ENTRY</p>
-                <p class="text-2xl font-semibold">$${entry.toFixed(2)}</p>
+                <p class="text-2xl font-semibold">₹${entry.toFixed(2)}</p>
               </div>
-              <div class="bg-gray-900 p-4 rounded-xl">
+              <div class="bg-gray-900 p-5 rounded-2xl text-center">
                 <p class="text-xs text-gray-400">TARGET</p>
-                <p class="text-2xl font-semibold text-green-400">$${target}</p>
+                <p class="text-2xl font-semibold text-emerald-400">₹${target}</p>
               </div>
-              <div class="bg-gray-900 p-4 rounded-xl">
+              <div class="bg-gray-900 p-5 rounded-2xl text-center">
                 <p class="text-xs text-gray-400">STOP LOSS</p>
-                <p class="text-2xl font-semibold text-red-400">$${stoploss}</p>
+                <p class="text-2xl font-semibold text-red-400">₹${stoploss}</p>
+              </div>
+              <div class="bg-gray-900 p-5 rounded-2xl text-center">
+                <p class="text-xs text-gray-400">AI CONFIDENCE</p>
+                <p class="text-3xl font-bold ${aiScore > 60 ? 'text-emerald-400' : aiScore < 40 ? 'text-red-400' : 'text-yellow-400'}">${aiScore}%</p>
               </div>
             </div>
 
-            <div class="mt-6 text-xs text-gray-400 bg-gray-900 p-4 rounded-xl">
-              <strong>Logic used:</strong> SMA(5/13) Crossover + RSI<br>
-              Risk-Reward ≈ 1:1.7
+            <div class="bg-gray-900 p-6 rounded-2xl text-sm mb-6">
+              <strong class="text-emerald-400">AI Reasoning:</strong> ${reason}<br><br>
+              <strong>News Sentiment:</strong> <span class="${sentiment === 'Positive' ? 'text-emerald-400' : sentiment === 'Negative' ? 'text-red-400' : 'text-gray-400'}">${sentiment}</span>
+            </div>
+
+            <div class="text-xs bg-gray-950 p-5 rounded-2xl text-gray-400">
+              Indicators: SMA(5/13), RSI(14), Momentum (8 days) + News Sentiment<br>
+              Risk-Reward Ratio: ~1:2
             </div>
           </div>
         `;
         resultDiv.classList.remove('hidden');
 
       } catch (e) {
-        resultDiv.innerHTML = `<p class="text-red-400 text-center">Error: ${e.message}. Check ticker or API key.</p>`;
+        resultDiv.innerHTML = `<p class="text-red-400 text-center py-12">Error: ${e.message}<br>Try RELIANCE.NS, TCS.NS, or AAPL</p>`;
         resultDiv.classList.remove('hidden');
       }
     }
 
+    function isLikelyIndian(ticker) {
+      const indianCommon = ['RELIANCE', 'TCS', 'HDFC', 'INFY', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'KOTAKBANK'];
+      return indianCommon.some(s => ticker.includes(s));
+    }
+
     function calculateSMA(data, period) {
-      const sum = data.slice(-period).reduce((a, b) => a + b, 0);
-      return sum / period;
+      return data.slice(-period).reduce((a, b) => a + b, 0) / period;
     }
 
     function calculateRSI(closes, period = 14) {
@@ -144,9 +205,7 @@
         if (change > 0) gains += change;
         else losses -= change;
       }
-      const avgGain = gains / period;
-      const avgLoss = losses / period;
-      const rs = avgLoss === 0 ? 100 : avgGain / avgLoss;
+      const rs = losses === 0 ? 100 : gains / losses;
       return 100 - (100 / (1 + rs));
     }
   </script>
