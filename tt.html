@@ -1,0 +1,1547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TradeOracle — AI Trading Signals</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Syne+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #060810;
+  --surface:  #0c1020;
+  --surface2: #111827;
+  --border:   rgba(99,210,255,0.1);
+  --border2:  rgba(99,210,255,0.18);
+  --text:     #e8f4ff;
+  --muted:    #5a7a9a;
+  --cyan:     #00d4ff;
+  --green:    #00ff88;
+  --red:      #ff4466;
+  --yellow:   #ffd700;
+  --orange:   #ff8c00;
+  --glow-c:   rgba(0,212,255,0.15);
+  --glow-g:   rgba(0,255,136,0.15);
+  --glow-r:   rgba(255,68,102,0.15);
+  --radius:   14px;
+  --mono:     'IBM Plex Mono', monospace;
+  --syne:     'Syne', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--syne);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── ANIMATED BG GRID ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  animation: gridDrift 30s linear infinite;
+}
+
+@keyframes gridDrift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 40px 40px; }
+}
+
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 900px 600px at 15% 30%, rgba(0,212,255,0.05) 0%, transparent 70%),
+    radial-gradient(ellipse 700px 900px at 85% 70%, rgba(0,255,136,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── LAYOUT ── */
+.app-wrap {
+  position: relative; z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+/* ── HEADER ── */
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-top: 1.5rem;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.logo-icon {
+  width: 48px; height: 48px;
+  background: linear-gradient(135deg, var(--cyan), #0066cc);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 0 30px rgba(0,212,255,0.4);
+  animation: logoPulse 3s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,212,255,0.3); }
+  50%       { box-shadow: 0 0 50px rgba(0,212,255,0.6); }
+}
+
+.logo-text {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(90deg, var(--cyan), #a0e4ff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+.header-sub {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0,255,136,0.08);
+  border: 1px solid rgba(0,255,136,0.25);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--green);
+  margin-top: 0.75rem;
+}
+
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: liveBlink 1.4s infinite;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* ── SEARCH BAR ── */
+.search-card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 1.75rem 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 0 60px rgba(0,212,255,0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.search-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  opacity: 0.5;
+}
+
+.search-label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.85rem;
+  display: block;
+}
+
+.search-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.stock-input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 0.9rem 1.25rem;
+  font-family: var(--mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.stock-input:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(0,212,255,0.12);
+}
+
+.stock-input::placeholder { color: var(--muted); text-transform: none; font-weight: 400; letter-spacing: 0; }
+
+.market-select {
+  background: var(--surface2);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.market-select:focus { border-color: var(--cyan); }
+
+.analyze-btn {
+  background: linear-gradient(135deg, #0099cc, var(--cyan));
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.9rem 2rem;
+  font-family: var(--syne);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #000;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.25s;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.analyze-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.25), transparent);
+  transition: opacity 0.2s;
+}
+
+.analyze-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,212,255,0.4);
+}
+
+.analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* QUICK CHIPS */
+.quick-chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.chip:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,212,255,0.05);
+}
+
+/* ── LOADING ── */
+.loading-screen {
+  display: none;
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  margin-bottom: 2rem;
+}
+
+.loading-screen.show { display: block; }
+
+.scan-animation {
+  width: 120px; height: 120px;
+  margin: 0 auto 1.5rem;
+  position: relative;
+}
+
+.scan-ring {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  animation: scanRotate 1.5s linear infinite;
+}
+
+.scan-ring:nth-child(1) { border-top-color: var(--cyan); animation-duration: 1.5s; }
+.scan-ring:nth-child(2) { border-right-color: var(--green); animation-duration: 2s; inset: 10px; }
+.scan-ring:nth-child(3) { border-bottom-color: rgba(0,212,255,0.3); animation-duration: 2.5s; inset: 20px; }
+
+@keyframes scanRotate { to { transform: rotate(360deg); } }
+
+.scan-center {
+  position: absolute;
+  inset: 35px;
+  background: radial-gradient(circle, rgba(0,212,255,0.2), transparent);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem;
+  animation: scanPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes scanPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.loading-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+.loading-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.loading-step.active { color: var(--cyan); background: rgba(0,212,255,0.06); }
+.loading-step.done { color: var(--green); }
+
+.step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+.loading-step.done .step-dot { background: var(--green); }
+.loading-step.active .step-dot { background: var(--cyan); animation: liveBlink 0.8s infinite; }
+
+/* ── ERROR BANNER ── */
+.error-banner {
+  display: none;
+  background: rgba(255,68,102,0.08);
+  border: 1px solid rgba(255,68,102,0.3);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  color: var(--red);
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-banner.show { display: flex; gap: 0.75rem; align-items: flex-start; }
+
+/* ── RESULT LAYOUT ── */
+#result-section { display: none; animation: fadeUp 0.5s ease; }
+#result-section.show { display: block; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── TICKER STRIP ── */
+.ticker-strip {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.ticker-left { display: flex; align-items: center; gap: 1rem; }
+
+.ticker-symbol {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.ticker-name {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.ticker-price {
+  font-family: var(--mono);
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.ticker-price.up   { color: var(--green); }
+.ticker-price.down { color: var(--red); }
+
+.price-change {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+}
+
+.price-change.up   { background: rgba(0,255,136,0.1); color: var(--green); }
+.price-change.down { background: rgba(255,68,102,0.1); color: var(--red); }
+
+/* ── SIGNAL CARD ── */
+.signal-card {
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.signal-card.BUY {
+  background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,180,90,0.04));
+  border: 2px solid rgba(0,255,136,0.35);
+  box-shadow: 0 0 60px rgba(0,255,136,0.08);
+}
+
+.signal-card.SELL {
+  background: linear-gradient(135deg, rgba(255,68,102,0.06), rgba(180,0,50,0.04));
+  border: 2px solid rgba(255,68,102,0.35);
+  box-shadow: 0 0 60px rgba(255,68,102,0.08);
+}
+
+.signal-card.NEUTRAL {
+  background: linear-gradient(135deg, rgba(255,215,0,0.06), rgba(200,160,0,0.04));
+  border: 2px solid rgba(255,215,0,0.3);
+  box-shadow: 0 0 60px rgba(255,215,0,0.05);
+}
+
+.signal-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+
+.signal-card.BUY::before    { background: linear-gradient(90deg, transparent, var(--green), transparent); }
+.signal-card.SELL::before   { background: linear-gradient(90deg, transparent, var(--red),   transparent); }
+.signal-card.NEUTRAL::before{ background: linear-gradient(90deg, transparent, var(--yellow),transparent); }
+
+.signal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.signal-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.signal-tag {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.signal-tag.BUY     { color: var(--green); text-shadow: 0 0 30px rgba(0,255,136,0.5); }
+.signal-tag.SELL    { color: var(--red);   text-shadow: 0 0 30px rgba(255,68,102,0.5); }
+.signal-tag.NEUTRAL { color: var(--yellow);text-shadow: 0 0 30px rgba(255,215,0,0.4); }
+
+.confidence-ring {
+  position: relative;
+  width: 64px; height: 64px;
+}
+
+.confidence-ring svg { transform: rotate(-90deg); }
+
+.confidence-ring .track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 4; }
+.confidence-ring .fill  { fill: none; stroke-width: 4; stroke-linecap: round;
+  stroke-dasharray: 175; stroke-dashoffset: 175; transition: stroke-dashoffset 1.5s ease; }
+
+.confidence-ring.BUY  .fill { stroke: var(--green); }
+.confidence-ring.SELL .fill { stroke: var(--red);   }
+.confidence-ring.NEUTRAL .fill { stroke: var(--yellow); }
+
+.conf-label {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.conf-label small { font-size: 0.55rem; color: var(--muted); font-weight: 400; }
+
+/* TRADE LEVELS GRID */
+.levels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.level-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.level-card::before {
+  content: '';
+  position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+}
+
+.level-card.entry   ::before { background: var(--cyan); }
+.level-card.target1 ::before { background: var(--green); }
+.level-card.target2 ::before { background: rgba(0,255,136,0.6); }
+.level-card.target3 ::before { background: rgba(0,255,136,0.35); }
+.level-card.stoploss::before { background: var(--red); }
+.level-card.rr      ::before { background: var(--yellow); }
+
+.level-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.4rem;
+}
+
+.level-value {
+  font-family: var(--mono);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.level-value.entry   { color: var(--cyan); }
+.level-value.target  { color: var(--green); }
+.level-value.stop    { color: var(--red); }
+.level-value.ratio   { color: var(--yellow); }
+
+.level-sub {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+/* ── ANALYSIS SECTION ── */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) { .analysis-grid { grid-template-columns: 1fr; } }
+
+.analysis-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  overflow: hidden;
+}
+
+.analysis-card h4 {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* INDICATORS */
+.indicator-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.indicator-row:last-child { border-bottom: none; }
+
+.ind-name {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ind-val {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.ind-signal {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.ind-signal.bull { background: rgba(0,255,136,0.12); color: var(--green); }
+.ind-signal.bear { background: rgba(255,68,102,0.12); color: var(--red); }
+.ind-signal.neut { background: rgba(255,215,0,0.1); color: var(--yellow); }
+
+/* GAUGE */
+.gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.gauge-bar {
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(90deg, var(--red), var(--yellow), var(--green));
+  border-radius: 999px;
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.gauge-needle {
+  position: absolute;
+  top: -4px;
+  width: 3px; height: 18px;
+  background: #fff;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 8px rgba(255,255,255,0.7);
+  transition: left 1s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.sentiment-score {
+  font-family: var(--mono);
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+}
+
+/* OHLCV ROW */
+.ohlcv-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.ohlcv-item {
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 0.6rem 0.75rem;
+  text-align: center;
+}
+
+.ohlcv-item .label { font-family: var(--mono); font-size: 0.6rem; color: var(--muted); }
+.ohlcv-item .val { font-family: var(--mono); font-size: 0.9rem; font-weight: 600; color: var(--text); }
+
+/* ── AI REASONING ── */
+.ai-card {
+  background: linear-gradient(135deg, rgba(0,212,255,0.04), rgba(0,100,180,0.04));
+  border: 1px solid rgba(0,212,255,0.2);
+  border-radius: 20px;
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-card::before {
+  content: '// AI ANALYSIS';
+  position: absolute; top: 1.25rem; right: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: rgba(0,212,255,0.3);
+  letter-spacing: 0.1em;
+}
+
+.ai-card h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  font-family: var(--mono);
+}
+
+.ai-text {
+  font-size: 0.92rem;
+  line-height: 1.75;
+  color: rgba(232,244,255,0.85);
+}
+
+.ai-text p { margin-bottom: 0.75rem; }
+.ai-text p:last-child { margin-bottom: 0; }
+.ai-text strong { color: var(--cyan); font-weight: 600; }
+.ai-text .bull { color: var(--green); }
+.ai-text .bear { color: var(--red); }
+
+/* DISCLAIMER */
+.disclaimer {
+  background: rgba(255,215,0,0.04);
+  border: 1px solid rgba(255,215,0,0.15);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: rgba(255,215,0,0.5);
+  line-height: 1.6;
+  margin-top: 1.5rem;
+}
+
+/* TIMEFRAME PILLS */
+.timeframe-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.tf-pill {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--surface2);
+}
+
+.tf-pill:hover, .tf-pill.active {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,212,255,0.06);
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 999px; }
+</style>
+</head>
+<body>
+<div class="app-wrap">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo-row">
+      <div class="logo-icon">📈</div>
+      <span class="logo-text">TradeOracle</span>
+    </div>
+    <p class="header-sub">AI-Powered Trading Signal Engine</p>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      Real-Time Analysis &nbsp;·&nbsp; Technical + AI Reasoning
+    </div>
+  </header>
+
+  <!-- SEARCH CARD -->
+  <div class="search-card">
+    <span class="search-label">⌨ Enter stock symbol to analyze</span>
+    <div class="search-row">
+      <input type="text" class="stock-input" id="stock-input"
+        placeholder="e.g. AAPL, RELIANCE, TSLA, NIFTY…"
+        onkeydown="if(event.key==='Enter') analyze()">
+      <select class="market-select" id="market-select">
+        <option value="">🌐 US Market</option>
+        <option value=".NS">🇮🇳 NSE India</option>
+        <option value=".BO">🇮🇳 BSE India</option>
+        <option value=".L">🇬🇧 London</option>
+        <option value=".HK">🇭🇰 Hong Kong</option>
+      </select>
+      <button class="analyze-btn" id="analyze-btn" onclick="analyze()">
+        ⚡ ANALYZE
+      </button>
+    </div>
+    <div class="quick-chips">
+      <span style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);padding:0.3rem 0;">Quick:</span>
+      <div class="chip" onclick="quickAnalyze('AAPL')">AAPL</div>
+      <div class="chip" onclick="quickAnalyze('TSLA')">TSLA</div>
+      <div class="chip" onclick="quickAnalyze('RELIANCE','.NS')">RELIANCE.NS</div>
+      <div class="chip" onclick="quickAnalyze('TCS','.NS')">TCS.NS</div>
+      <div class="chip" onclick="quickAnalyze('NVDA')">NVDA</div>
+      <div class="chip" onclick="quickAnalyze('INFY','.NS')">INFY.NS</div>
+      <div class="chip" onclick="quickAnalyze('GOOGL')">GOOGL</div>
+      <div class="chip" onclick="quickAnalyze('NIFTY50','.NS')">NIFTY</div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="loading-screen" id="loading">
+    <div class="scan-animation">
+      <div class="scan-ring"></div>
+      <div class="scan-ring"></div>
+      <div class="scan-ring"></div>
+      <div class="scan-center">📊</div>
+    </div>
+    <p style="font-family:var(--mono);font-size:0.8rem;color:var(--muted);margin-bottom:1.25rem;letter-spacing:0.08em">SCANNING MARKET DATA…</p>
+    <div class="loading-steps">
+      <div class="loading-step active" id="step1">
+        <div class="step-dot"></div> Fetching live price data
+      </div>
+      <div class="loading-step" id="step2">
+        <div class="step-dot"></div> Computing technical indicators
+      </div>
+      <div class="loading-step" id="step3">
+        <div class="step-dot"></div> Running AI analysis engine
+      </div>
+      <div class="loading-step" id="step4">
+        <div class="step-dot"></div> Generating trade signal
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="error-banner" id="error-banner">
+    <span>⚠️</span>
+    <span id="error-text">Something went wrong.</span>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="result-section">
+
+    <!-- TICKER -->
+    <div class="ticker-strip" id="ticker-strip"></div>
+
+    <!-- TIMEFRAME -->
+    <div class="timeframe-row">
+      <span style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);padding:0.35rem 0.5rem">Timeframe:</span>
+      <div class="tf-pill active" id="tf-intraday" onclick="switchTF('intraday',this)">Intraday</div>
+      <div class="tf-pill" id="tf-swing" onclick="switchTF('swing',this)">Swing (1-5d)</div>
+      <div class="tf-pill" id="tf-positional" onclick="switchTF('positional',this)">Positional (2-4wk)</div>
+    </div>
+
+    <!-- SIGNAL CARD -->
+    <div class="signal-card" id="signal-card">
+      <div class="signal-header">
+        <div class="signal-badge">
+          <div>
+            <div class="signal-tag" id="signal-tag">BUY</div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);margin-top:0.2rem" id="signal-subtext">Strong Momentum Signal</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);margin-bottom:0.3rem">CONFIDENCE</div>
+            <div class="confidence-ring" id="conf-ring">
+              <svg width="64" height="64" viewBox="0 0 64 64">
+                <circle class="track" cx="32" cy="32" r="28"/>
+                <circle class="fill" id="conf-circle" cx="32" cy="32" r="28"/>
+              </svg>
+              <div class="conf-label">
+                <span id="conf-pct">—</span>
+                <small>conf</small>
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted)">TRADE TYPE</div>
+            <div style="font-family:var(--mono);font-size:0.9rem;font-weight:600;margin-top:0.2rem" id="trade-type">Momentum</div>
+            <div style="font-family:var(--mono);font-size:0.6rem;color:var(--muted);margin-top:0.2rem" id="hold-period">Hold: 1-3 days</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEVELS -->
+      <div class="levels-grid" id="levels-grid"></div>
+    </div>
+
+    <!-- ANALYSIS GRID -->
+    <div class="analysis-grid">
+      <!-- Technical Indicators -->
+      <div class="analysis-card">
+        <h4>📐 Technical Indicators</h4>
+        <div id="indicators-body"></div>
+      </div>
+      <!-- OHLCV + Sentiment -->
+      <div class="analysis-card">
+        <h4>📊 Market Data</h4>
+        <div id="ohlcv-body"></div>
+        <div style="margin-top:1rem">
+          <div style="font-family:var(--mono);font-size:0.65rem;color:var(--muted);letter-spacing:0.1em;margin-bottom:0.6rem">BULL/BEAR SENTIMENT</div>
+          <div class="gauge-wrap">
+            <div class="gauge-bar">
+              <div class="gauge-needle" id="gauge-needle" style="left:50%"></div>
+            </div>
+            <div class="gauge-labels">
+              <span>Strong Sell</span><span>Neutral</span><span>Strong Buy</span>
+            </div>
+            <div class="sentiment-score" id="sentiment-score">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI REASONING -->
+    <div class="ai-card" id="ai-card">
+      <h3>🤖 AI Trade Reasoning</h3>
+      <div class="ai-text" id="ai-text">Analyzing…</div>
+    </div>
+
+    <div class="disclaimer">
+      ⚠️ DISCLAIMER: This tool is for educational purposes only. TradeOracle uses technical analysis + AI reasoning to generate signals. Past patterns do not guarantee future performance. Always do your own research. This is NOT financial advice. Trading involves significant risk of loss.
+    </div>
+  </div>
+
+</div><!-- /app-wrap -->
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+let currentTF = 'intraday';
+let lastStockData = null;
+let lastSymbol = '';
+let lastSuffix = '';
+
+// ══════════════════════════════════════════════
+// QUICK ANALYZE HELPER
+// ══════════════════════════════════════════════
+function quickAnalyze(sym, suffix='') {
+  document.getElementById('stock-input').value = sym;
+  const sel = document.getElementById('market-select');
+  sel.value = suffix;
+  analyze();
+}
+
+function switchTF(tf, el) {
+  document.querySelectorAll('.tf-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentTF = tf;
+  if (lastStockData) renderResults(lastStockData);
+}
+
+// ══════════════════════════════════════════════
+// MAIN ANALYZE
+// ══════════════════════════════════════════════
+async function analyze() {
+  const raw  = document.getElementById('stock-input').value.trim().toUpperCase();
+  const sfx  = document.getElementById('market-select').value;
+  if (!raw) { showError('Please enter a stock symbol.'); return; }
+
+  lastSymbol = raw; lastSuffix = sfx;
+  const symbol = raw + sfx;
+
+  hideError();
+  showLoading(true);
+  document.getElementById('result-section').classList.remove('show');
+  document.getElementById('analyze-btn').disabled = true;
+
+  // Progress steps
+  await animateStep(1, 800);
+
+  try {
+    // ── FETCH QUOTE (Yahoo Finance via proxy) ──
+    const quoteUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=90d`;
+    const resp = await fetchWithCORS(quoteUrl);
+    if (!resp) throw new Error(`Could not fetch data for "${symbol}". Check the symbol and market suffix.`);
+
+    const data   = resp.chart.result[0];
+    const meta   = data.meta;
+    const quotes = data.indicators.quote[0];
+    const timestamps = data.timestamp || [];
+    const closes = quotes.close || [];
+    const opens  = quotes.open  || [];
+    const highs  = quotes.high  || [];
+    const lows   = quotes.low   || [];
+    const vols   = quotes.volume|| [];
+
+    // Clean nulls
+    const clean = arr => arr.map(v => v ?? null);
+    const cls = clean(closes); const opn = clean(opens);
+    const hgh = clean(highs);  const lw  = clean(lows);
+    const vol = clean(vols);
+
+    await animateStep(2, 900);
+
+    // ── COMPUTE INDICATORS ──
+    const indicators = computeIndicators(cls, opn, hgh, lw, vol);
+
+    await animateStep(3, 600);
+
+    // ── PREPARE STOCK DATA PACKAGE ──
+    const currentPrice = meta.regularMarketPrice || cls[cls.length-1];
+    const prevClose    = meta.chartPreviousClose || cls[cls.length-2] || currentPrice;
+    const change       = currentPrice - prevClose;
+    const changePct    = (change / prevClose) * 100;
+
+    const stockData = {
+      symbol: meta.symbol || symbol,
+      name:   meta.longName || meta.shortName || symbol,
+      price:  currentPrice,
+      prevClose, change, changePct,
+      open:   opn[opn.length-1],
+      high:   hgh[hgh.length-1],
+      low:    lw[lw.length-1],
+      volume: vol[vol.length-1],
+      week52High: meta.fiftyTwoWeekHigh,
+      week52Low:  meta.fiftyTwoWeekLow,
+      avgVol:     meta.averageDailyVolume3Month,
+      currency:   meta.currency || 'USD',
+      indicators
+    };
+
+    // ── AI ANALYSIS ──
+    await animateStep(4, 400);
+    const aiResult = await runAIAnalysis(stockData);
+    stockData.ai = aiResult;
+
+    await animateStep(4, 200); // finish
+
+    lastStockData = stockData;
+    showLoading(false);
+    renderResults(stockData);
+
+  } catch(e) {
+    showLoading(false);
+    showError(e.message || 'Failed to fetch market data. Try a different symbol.');
+    console.error(e);
+  }
+
+  document.getElementById('analyze-btn').disabled = false;
+}
+
+// ══════════════════════════════════════════════
+// CORS FETCH (Yahoo via allorigins proxy)
+// ══════════════════════════════════════════════
+async function fetchWithCORS(url) {
+  // Try direct first (works in some browsers/environments)
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+  try {
+    const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(15000) });
+    if (!r.ok) throw new Error('Proxy error');
+    const j = await r.json();
+    return JSON.parse(j.contents);
+  } catch(e) {
+    // fallback: try direct
+    try {
+      const r2 = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+      return await r2.json();
+    } catch(e2) {
+      throw new Error(`Cannot fetch "${url}". Network issue or symbol not found.`);
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+// TECHNICAL INDICATORS
+// ══════════════════════════════════════════════
+function computeIndicators(cls, opn, hgh, lw, vol) {
+  // Helper: SMA
+  const sma = (arr, n) => {
+    const valid = arr.filter(v => v!=null);
+    if (valid.length < n) return null;
+    const slice = valid.slice(-n);
+    return slice.reduce((a,b)=>a+b,0) / n;
+  };
+
+  // Helper: EMA
+  const ema = (arr, n) => {
+    const valid = arr.filter(v => v!=null);
+    if (valid.length < n) return null;
+    const k = 2/(n+1);
+    let e = valid.slice(0, n).reduce((a,b)=>a+b,0)/n;
+    for (let i=n; i<valid.length; i++) e = valid[i]*k + e*(1-k);
+    return e;
+  };
+
+  // RSI
+  const rsi = (arr, n=14) => {
+    const valid = arr.filter(v => v!=null);
+    if (valid.length < n+1) return null;
+    const slice = valid.slice(-n-1);
+    let gains=0, losses=0;
+    for (let i=1; i<slice.length; i++) {
+      const d = slice[i]-slice[i-1];
+      if (d>0) gains+=d; else losses+=Math.abs(d);
+    }
+    const ag=gains/n, al=losses/n;
+    if (al===0) return 100;
+    return 100 - 100/(1+ag/al);
+  };
+
+  // MACD
+  const macd = (arr) => {
+    const e12 = ema(arr,12), e26 = ema(arr,26);
+    if (e12==null||e26==null) return {macd:null,signal:null,hist:null};
+    const m = e12-e26;
+    return { macd:m, signal:ema([...arr.slice(0,-1), arr[arr.length-1]], 9), hist:null };
+  };
+
+  // Bollinger Bands
+  const bb = (arr, n=20, k=2) => {
+    const valid = arr.filter(v=>v!=null);
+    if (valid.length < n) return null;
+    const slice = valid.slice(-n);
+    const mid = slice.reduce((a,b)=>a+b,0)/n;
+    const std = Math.sqrt(slice.reduce((a,b)=>a+(b-mid)**2,0)/n);
+    return { upper: mid+k*std, middle: mid, lower: mid-k*std };
+  };
+
+  // ATR
+  const atr = (h, l, c, n=14) => {
+    const len = Math.min(h.length, l.length, c.length);
+    if (len < 2) return null;
+    const trs = [];
+    for (let i=1; i<len; i++) {
+      if (h[i]==null||l[i]==null||c[i-1]==null) continue;
+      trs.push(Math.max(h[i]-l[i], Math.abs(h[i]-c[i-1]), Math.abs(l[i]-c[i-1])));
+    }
+    if (trs.length < n) return trs.reduce((a,b)=>a+b,0)/trs.length;
+    return trs.slice(-n).reduce((a,b)=>a+b,0)/n;
+  };
+
+  const cur  = cls.filter(v=>v!=null).slice(-1)[0];
+  const sma20 = sma(cls,20);
+  const sma50 = sma(cls,50);
+  const sma200= sma(cls,200);
+  const ema9  = ema(cls,9);
+  const ema21 = ema(cls,21);
+  const rsi14 = rsi(cls,14);
+  const macdVal = macd(cls);
+  const bbVal = bb(cls,20);
+  const atrVal = atr(hgh,lw,cls,14);
+
+  // Volume ratio
+  const avgV = vol.filter(v=>v!=null).slice(-20).reduce((a,b)=>a+b,0)/20;
+  const lastV = vol.filter(v=>v!=null).slice(-1)[0];
+  const volRatio = avgV ? lastV/avgV : 1;
+
+  // Momentum score (-100 to +100)
+  let score = 0;
+  if (rsi14 != null) {
+    if (rsi14 > 70) score -= 20;
+    else if (rsi14 > 60) score += 10;
+    else if (rsi14 < 30) score += 25;
+    else if (rsi14 > 50) score += 15;
+    else score -= 10;
+  }
+  if (sma20 && cur > sma20) score += 15;
+  else if (sma20) score -= 15;
+  if (sma50 && cur > sma50) score += 15;
+  else if (sma50) score -= 15;
+  if (sma200 && cur > sma200) score += 10;
+  else if (sma200) score -= 10;
+  if (macdVal.macd != null) {
+    if (macdVal.macd > 0) score += 15; else score -= 15;
+  }
+  if (bbVal) {
+    if (cur < bbVal.lower) score += 15;
+    else if (cur > bbVal.upper) score -= 15;
+  }
+  if (volRatio > 1.5) score *= 1.1;
+
+  return {
+    cur, sma20, sma50, sma200, ema9, ema21,
+    rsi: rsi14, macd: macdVal, bb: bbVal,
+    atr: atrVal, volRatio,
+    score: Math.max(-100, Math.min(100, score))
+  };
+}
+
+// ══════════════════════════════════════════════
+// AI ANALYSIS via Claude API
+// ══════════════════════════════════════════════
+async function runAIAnalysis(d) {
+  const { indicators: ind, price, symbol, name, changePct, week52High, week52Low, currency } = d;
+  const cur = ind.cur || price;
+  const fmt = (v, dec=2) => v != null ? v.toFixed(dec) : 'N/A';
+  const curr = currency === 'INR' ? '₹' : currency === 'GBP' ? '£' : '$';
+
+  const prompt = `You are a professional quantitative trading analyst. Analyze this stock and generate a precise trading signal.
+
+STOCK: ${symbol} (${name})
+CURRENT PRICE: ${curr}${fmt(cur)}
+52W HIGH: ${curr}${fmt(week52High)} | 52W LOW: ${curr}${fmt(week52Low)}
+PRICE CHANGE: ${changePct >= 0 ? '+' : ''}${fmt(changePct)}%
+CURRENCY: ${currency}
+
+TECHNICAL INDICATORS:
+- RSI(14): ${fmt(ind.rsi)} ${ind.rsi > 70 ? '(OVERBOUGHT)' : ind.rsi < 30 ? '(OVERSOLD)' : '(NEUTRAL)'}
+- MACD: ${fmt(ind.macd?.macd)} | Signal: ${fmt(ind.macd?.signal)} — ${ind.macd?.macd > 0 ? 'BULLISH crossover' : 'BEARISH crossover'}
+- SMA20: ${curr}${fmt(ind.sma20)} | Price vs SMA20: ${ind.sma20 ? (cur > ind.sma20 ? 'ABOVE (bullish)' : 'BELOW (bearish)') : 'N/A'}
+- SMA50: ${curr}${fmt(ind.sma50)} | Price vs SMA50: ${ind.sma50 ? (cur > ind.sma50 ? 'ABOVE' : 'BELOW') : 'N/A'}
+- SMA200: ${curr}${fmt(ind.sma200)} | Long trend: ${ind.sma200 ? (cur > ind.sma200 ? 'BULLISH' : 'BEARISH') : 'N/A'}
+- EMA9: ${curr}${fmt(ind.ema9)} | EMA21: ${curr}${fmt(ind.ema21)}
+- Bollinger Bands: Upper ${curr}${fmt(ind.bb?.upper)} | Mid ${curr}${fmt(ind.bb?.middle)} | Lower ${curr}${fmt(ind.bb?.lower)}
+  Position: ${ind.bb ? (cur > ind.bb.upper ? 'Above upper (overbought zone)' : cur < ind.bb.lower ? 'Below lower (oversold zone)' : 'Within bands') : 'N/A'}
+- ATR(14): ${curr}${fmt(ind.atr)} (volatility measure)
+- Volume Ratio vs 20d avg: ${fmt(ind.volRatio, 2)}x ${ind.volRatio > 1.3 ? '(HIGH volume - confirms move)' : '(normal volume)'}
+- Momentum Score: ${fmt(ind.score)}/100
+
+TIMEFRAME: ${currentTF === 'intraday' ? 'Intraday (same-day trade)' : currentTF === 'swing' ? 'Swing trade (1-5 days)' : 'Positional trade (2-4 weeks)'}
+
+Based on ALL the above data, give me a structured JSON response ONLY (no markdown, no explanation outside JSON):
+
+{
+  "signal": "BUY" or "SELL" or "NEUTRAL",
+  "confidence": number 50-95,
+  "entry": exact price number (${curr} value),
+  "target1": first target price,
+  "target2": second target price,  
+  "target3": third (stretch) target price,
+  "stoploss": strict stoploss price,
+  "riskReward": "1:X" ratio string,
+  "tradeType": "Momentum" or "Breakout" or "Reversal" or "Trend Following" or "Mean Reversion",
+  "holdPeriod": hold period string like "Intraday" or "2-3 days" or "2-3 weeks",
+  "reasoning": "3 sentence paragraph explaining the exact technical reasons for this signal, referencing specific indicator values",
+  "keyRisks": "1-2 sentence about main risks to this trade",
+  "supportLevel": key support price,
+  "resistanceLevel": key resistance price,
+  "sentimentScore": number -100 to +100 (negative = bearish, positive = bullish)
+}
+
+Use the ATR to calculate realistic stoploss and targets. For BUY: entry near current/support, targets above, stoploss below support. For SELL: entry near current/resistance, targets below, stoploss above resistance. Be precise with price levels.`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const body = await resp.json();
+    const txt = body.content?.[0]?.text || '';
+    // Parse JSON from response
+    const jsonMatch = txt.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in AI response');
+    return JSON.parse(jsonMatch[0]);
+  } catch(e) {
+    console.warn('AI API error, using technical fallback', e);
+    // Fallback: derive signal purely from indicators
+    return buildFallbackSignal(d);
+  }
+}
+
+function buildFallbackSignal(d) {
+  const { indicators: ind, price, currency } = d;
+  const cur = ind.cur || price;
+  const atr = ind.atr || cur * 0.015;
+  const score = ind.score || 0;
+  const curr = currency === 'INR' ? '₹' : '$';
+  const signal = score > 20 ? 'BUY' : score < -20 ? 'SELL' : 'NEUTRAL';
+  const confidence = Math.min(90, Math.max(52, 60 + Math.abs(score) * 0.3));
+
+  if (signal === 'BUY') {
+    return {
+      signal, confidence: Math.round(confidence),
+      entry: +cur.toFixed(2),
+      target1: +(cur + atr * 1.5).toFixed(2),
+      target2: +(cur + atr * 3).toFixed(2),
+      target3: +(cur + atr * 5).toFixed(2),
+      stoploss: +(cur - atr * 1.5).toFixed(2),
+      riskReward: '1:2',
+      tradeType: 'Momentum',
+      holdPeriod: currentTF === 'intraday' ? 'Intraday' : '2-3 days',
+      reasoning: `RSI at ${ind.rsi?.toFixed(1)} suggests ${ind.rsi < 50 ? 'potential recovery' : 'bullish momentum'}. Price is ${ind.sma20 ? (cur > ind.sma20 ? 'above' : 'below') : 'near'} the 20-day moving average. MACD ${ind.macd?.macd > 0 ? 'is positive, confirming bullish bias' : 'is negative but may be turning'}.`,
+      keyRisks: 'Market-wide correction or negative news could invalidate this signal. Monitor volume confirmation.',
+      supportLevel: +(cur - atr).toFixed(2),
+      resistanceLevel: +(cur + atr * 2).toFixed(2),
+      sentimentScore: score
+    };
+  } else if (signal === 'SELL') {
+    return {
+      signal, confidence: Math.round(confidence),
+      entry: +cur.toFixed(2),
+      target1: +(cur - atr * 1.5).toFixed(2),
+      target2: +(cur - atr * 3).toFixed(2),
+      target3: +(cur - atr * 5).toFixed(2),
+      stoploss: +(cur + atr * 1.5).toFixed(2),
+      riskReward: '1:2',
+      tradeType: 'Mean Reversion',
+      holdPeriod: currentTF === 'intraday' ? 'Intraday' : '2-3 days',
+      reasoning: `RSI at ${ind.rsi?.toFixed(1)} shows ${ind.rsi > 60 ? 'overbought conditions' : 'bearish pressure'}. Price is ${ind.sma20 ? (cur < ind.sma20 ? 'below key moving averages, confirming downtrend' : 'approaching resistance near moving averages') : 'near resistance'}. MACD ${ind.macd?.macd < 0 ? 'is negative, confirming bearish momentum' : 'is showing weakness'}.`,
+      keyRisks: 'Short squeezes or positive news catalyst could reverse the trend quickly.',
+      supportLevel: +(cur - atr * 2).toFixed(2),
+      resistanceLevel: +(cur + atr).toFixed(2),
+      sentimentScore: score
+    };
+  } else {
+    return {
+      signal: 'NEUTRAL', confidence: 55,
+      entry: +cur.toFixed(2),
+      target1: +(cur + atr).toFixed(2),
+      target2: +(cur + atr * 2).toFixed(2),
+      target3: +(cur + atr * 3).toFixed(2),
+      stoploss: +(cur - atr * 1.2).toFixed(2),
+      riskReward: '1:1.5',
+      tradeType: 'Wait & Watch',
+      holdPeriod: 'Wait for clearer signal',
+      reasoning: 'Indicators are mixed with no clear directional bias. RSI is in neutral zone and price is near moving average equilibrium. Wait for a breakout above resistance or breakdown below support.',
+      keyRisks: 'Entering in consolidation zones leads to whipsaws. Patience is key.',
+      supportLevel: +(cur - atr).toFixed(2),
+      resistanceLevel: +(cur + atr).toFixed(2),
+      sentimentScore: 0
+    };
+  }
+}
+
+// ══════════════════════════════════════════════
+// RENDER RESULTS
+// ══════════════════════════════════════════════
+function renderResults(d) {
+  const ai = d.ai || {};
+  const ind = d.indicators;
+  const cur = d.price;
+  const curr = d.currency === 'INR' ? '₹' : d.currency === 'GBP' ? '£' : d.currency === 'JPY' ? '¥' : '$';
+  const fmt  = (v, dec=2) => v != null ? (+v).toLocaleString('en-IN', {minimumFractionDigits:dec, maximumFractionDigits:dec}) : 'N/A';
+  const pFmt = (v) => v != null ? `${curr}${fmt(v)}` : 'N/A';
+  const signal = ai.signal || 'NEUTRAL';
+
+  // TICKER STRIP
+  const isUp = d.change >= 0;
+  document.getElementById('ticker-strip').innerHTML = `
+    <div class="ticker-left">
+      <div>
+        <div class="ticker-symbol">${d.symbol}</div>
+        <div class="ticker-name">${d.name}</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <div class="ticker-price ${isUp?'up':'down'}">${curr}${fmt(cur)}</div>
+      <div class="price-change ${isUp?'up':'down'}">
+        ${isUp?'▲':'▼'} ${Math.abs(d.change).toFixed(2)} (${Math.abs(d.changePct).toFixed(2)}%)
+      </div>
+      <div style="font-family:var(--mono);font-size:0.75rem;color:var(--muted);text-align:right">
+        <div>52W H: ${pFmt(d.week52High)}</div>
+        <div>52W L: ${pFmt(d.week52Low)}</div>
+      </div>
+    </div>
+  `;
+
+  // SIGNAL CARD
+  const sc = document.getElementById('signal-card');
+  sc.className = `signal-card ${signal}`;
+  const st = document.getElementById('signal-tag');
+  st.textContent = signal;
+  st.className = `signal-tag ${signal}`;
+  document.getElementById('signal-subtext').textContent = ai.tradeType || 'Technical Signal';
+  document.getElementById('trade-type').textContent = ai.tradeType || '—';
+  document.getElementById('hold-period').textContent = `Hold: ${ai.holdPeriod || '—'}`;
+
+  // Confidence ring
+  const confPct = ai.confidence || 70;
+  document.getElementById('conf-pct').textContent = confPct + '%';
+  const ring = document.getElementById('conf-ring');
+  ring.className = `confidence-ring ${signal}`;
+  // Animate after render
+  setTimeout(() => {
+    const circ = document.getElementById('conf-circle');
+    const offset = 175 - (175 * confPct / 100);
+    circ.style.strokeDashoffset = offset;
+  }, 100);
+
+  // LEVELS
+  const levelsHtml = `
+    <div class="level-card entry">
+      <div class="level-label">⚡ Entry Point</div>
+      <div class="level-value entry">${pFmt(ai.entry)}</div>
+      <div class="level-sub">${signal === 'BUY' ? 'Buy at or below' : signal === 'SELL' ? 'Sell at or above' : 'Watch this level'}</div>
+    </div>
+    <div class="level-card target1">
+      <div class="level-label">🎯 Target 1</div>
+      <div class="level-value target">${pFmt(ai.target1)}</div>
+      <div class="level-sub">${ai.entry && ai.target1 ? pct(ai.entry, ai.target1) : ''} potential</div>
+    </div>
+    <div class="level-card target2">
+      <div class="level-label">🎯 Target 2</div>
+      <div class="level-value target">${pFmt(ai.target2)}</div>
+      <div class="level-sub">${ai.entry && ai.target2 ? pct(ai.entry, ai.target2) : ''} potential</div>
+    </div>
+    <div class="level-card target3">
+      <div class="level-label">🚀 Target 3 (Stretch)</div>
+      <div class="level-value target">${pFmt(ai.target3)}</div>
+      <div class="level-sub">${ai.entry && ai.target3 ? pct(ai.entry, ai.target3) : ''} potential</div>
+    </div>
+    <div class="level-card stoploss">
+      <div class="level-label">🛑 Stop Loss</div>
+      <div class="level-value stop">${pFmt(ai.stoploss)}</div>
+      <div class="level-sub">${ai.entry && ai.stoploss ? pct(ai.entry, ai.stoploss) : ''} max loss</div>
+    </div>
+    <div class="level-card rr">
+      <div class="level-label">⚖️ Risk:Reward</div>
+      <div class="level-value ratio">${ai.riskReward || '1:2'}</div>
+      <div class="level-sub">Confidence: ${confPct}%</div>
+    </div>
+  `;
+  document.getElementById('levels-grid').innerHTML = levelsHtml;
+
+  // INDICATORS
+  const indRows = [
+    { name: 'RSI (14)', val: ind.rsi?.toFixed(1), bull: ind.rsi > 50 && ind.rsi < 70, bear: ind.rsi > 70 || ind.rsi < 40, sig: ind.rsi > 70 ? 'Overbought' : ind.rsi < 30 ? 'Oversold' : ind.rsi > 50 ? 'Bullish' : 'Bearish' },
+    { name: 'MACD', val: ind.macd?.macd?.toFixed(2), bull: ind.macd?.macd > 0, bear: ind.macd?.macd < 0, sig: ind.macd?.macd > 0 ? 'Bullish' : 'Bearish' },
+    { name: 'SMA 20', val: pFmt(ind.sma20), bull: cur > ind.sma20, bear: cur < ind.sma20, sig: cur > ind.sma20 ? 'Price Above' : 'Price Below' },
+    { name: 'SMA 50', val: pFmt(ind.sma50), bull: cur > ind.sma50, bear: cur < ind.sma50, sig: cur > ind.sma50 ? 'Uptrend' : 'Downtrend' },
+    { name: 'SMA 200', val: pFmt(ind.sma200), bull: cur > ind.sma200, bear: cur < ind.sma200, sig: cur > ind.sma200 ? 'Bull Market' : 'Bear Market' },
+    { name: 'Bollinger', val: ind.bb ? (cur > ind.bb.upper ? 'Above Upper' : cur < ind.bb.lower ? 'Below Lower' : 'Inside Bands') : 'N/A', bull: ind.bb && cur < ind.bb.lower, bear: ind.bb && cur > ind.bb.upper, sig: ind.bb ? (cur > ind.bb.upper ? 'Overbought' : cur < ind.bb.lower ? 'Oversold' : 'Neutral') : '—' },
+    { name: 'Volume Ratio', val: ind.volRatio?.toFixed(2) + 'x', bull: ind.volRatio > 1.3, bear: ind.volRatio < 0.7, sig: ind.volRatio > 1.3 ? 'High Volume' : ind.volRatio < 0.7 ? 'Low Volume' : 'Average' },
+    { name: 'ATR (14)', val: pFmt(ind.atr), bull: false, bear: false, sig: 'Volatility' },
+  ];
+
+  document.getElementById('indicators-body').innerHTML = indRows.map(r => `
+    <div class="indicator-row">
+      <span class="ind-name">${r.name}</span>
+      <span class="ind-val" style="color:${r.bull ? 'var(--green)' : r.bear ? 'var(--red)' : 'var(--text)'}">${r.val || 'N/A'}</span>
+      <span class="ind-signal ${r.bull ? 'bull' : r.bear ? 'bear' : 'neut'}">${r.sig}</span>
+    </div>
+  `).join('');
+
+  // OHLCV
+  document.getElementById('ohlcv-body').innerHTML = `
+    <div class="ohlcv-row">
+      <div class="ohlcv-item"><div class="label">OPEN</div><div class="val">${pFmt(d.open)}</div></div>
+      <div class="ohlcv-item"><div class="label">HIGH</div><div class="val" style="color:var(--green)">${pFmt(d.high)}</div></div>
+      <div class="ohlcv-item"><div class="label">LOW</div><div class="val" style="color:var(--red)">${pFmt(d.low)}</div></div>
+    </div>
+    <div style="margin-top:0.5rem" class="ohlcv-row">
+      <div class="ohlcv-item"><div class="label">PREV</div><div class="val">${pFmt(d.prevClose)}</div></div>
+      <div class="ohlcv-item"><div class="label">VOL</div><div class="val">${fmtVol(d.volume)}</div></div>
+      <div class="ohlcv-item"><div class="label">AVG VOL</div><div class="val">${fmtVol(d.avgVol)}</div></div>
+    </div>
+  `;
+
+  // GAUGE
+  const sentScore = ai.sentimentScore || ind.score || 0;
+  const needlePct = ((sentScore + 100) / 200 * 100);
+  setTimeout(() => {
+    document.getElementById('gauge-needle').style.left = needlePct + '%';
+    document.getElementById('sentiment-score').textContent = sentScore > 30 ? '📈 Bullish' : sentScore < -30 ? '📉 Bearish' : '↔️ Neutral';
+    document.getElementById('sentiment-score').style.color = sentScore > 20 ? 'var(--green)' : sentScore < -20 ? 'var(--red)' : 'var(--yellow)';
+  }, 300);
+
+  // AI REASONING
+  document.getElementById('ai-text').innerHTML = `
+    <p>${ai.reasoning || 'Analysis complete.'}</p>
+    <p>📌 <strong>Key Support:</strong> ${pFmt(ai.supportLevel)} &nbsp;|&nbsp; <strong>Key Resistance:</strong> ${pFmt(ai.resistanceLevel)}</p>
+    <p class="${signal === 'BUY' ? 'bull' : signal === 'SELL' ? 'bear' : ''}">⚠️ <strong>Risk:</strong> ${ai.keyRisks || 'Always use stop loss.'}</p>
+  `;
+
+  document.getElementById('result-section').classList.add('show');
+  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── HELPERS ──
+function pct(a, b) {
+  if (!a || !b) return '';
+  const p = ((b - a) / a * 100).toFixed(1);
+  return (p > 0 ? '+' : '') + p + '%';
+}
+
+function fmtVol(v) {
+  if (!v) return 'N/A';
+  if (v >= 1e9) return (v/1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v/1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v/1e3).toFixed(1) + 'K';
+  return v.toString();
+}
+
+// ── LOADING STEPS ──
+async function animateStep(step, delay) {
+  for (let i=1; i<=4; i++) {
+    const el = document.getElementById('step' + i);
+    el.classList.remove('active', 'done');
+    if (i < step) el.classList.add('done');
+    else if (i === step) el.classList.add('active');
+  }
+  await sleep(delay);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function showLoading(show) {
+  document.getElementById('loading').classList.toggle('show', show);
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  document.getElementById('error-text').textContent = msg;
+  el.classList.add('show');
+}
+
+function hideError() {
+  document.getElementById('error-banner').classList.remove('show');
+}
+</script>
+</body>
+</html>
