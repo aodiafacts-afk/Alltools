@@ -514,34 +514,22 @@ import {
 let auth, db, currentUser, unsubscribe;
 let activeType = 'reward';
 
-// ── Config Handling ──
-function getConfig() {
-  try { return JSON.parse(localStorage.getItem('sp_firebase_config') || 'null'); }
-  catch { return null; }
-}
-
-window.saveConfig = function() {
-  const cfg = {
-    apiKey: document.getElementById('cfg-apikey').value.trim(),
-    authDomain: document.getElementById('cfg-authdomain').value.trim(),
-    projectId: document.getElementById('cfg-projectid').value.trim(),
-    appId: document.getElementById('cfg-appid').value.trim(),
-  };
-  if (!cfg.apiKey || !cfg.authDomain || !cfg.projectId) {
-    alert('Please fill all fields'); return;
-  }
-  localStorage.setItem('sp_firebase_config', JSON.stringify(cfg));
-  location.reload();
+// ── Firebase Config (hardcoded) ──
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCHhlkrd4fCIkEpwjDKJgHxlsEf7exDVgw",
+  authDomain: "study-424bf.firebaseapp.com",
+  projectId: "study-424bf",
+  storageBucket: "study-424bf.firebasestorage.app",
+  messagingSenderId: "895405860103",
+  appId: "1:895405860103:web:af88df02ca742d0ab5d1a2"
 };
+
+function getConfig() { return FIREBASE_CONFIG; }
 
 // ── Init ──
 function init() {
-  const cfg = getConfig();
-  if (!cfg) {
-    document.getElementById('config-screen').style.display = 'flex';
-    return;
-  }
-  const app = initializeApp(cfg);
+  document.getElementById('config-screen').style.display = 'none';
+  const app = initializeApp(FIREBASE_CONFIG);
   auth = getAuth(app);
   db = getFirestore(app);
 
@@ -751,18 +739,7 @@ window.closeSettingsOutside = function(e) {
 };
 
 window.saveSettings = function() {
-  const cfg = {
-    apiKey: document.getElementById('s-apikey').value.trim(),
-    authDomain: document.getElementById('s-authdomain').value.trim(),
-    projectId: document.getElementById('s-projectid').value.trim(),
-    appId: document.getElementById('s-appid').value.trim(),
-  };
-  if (!cfg.apiKey || !cfg.authDomain || !cfg.projectId) {
-    showToast('⚠️ Please fill all fields'); return;
-  }
-  localStorage.setItem('sp_firebase_config', JSON.stringify(cfg));
-  showToast('✅ Config saved! Reloading...');
-  setTimeout(() => location.reload(), 1200);
+  showToast('ℹ️ Config is hardcoded in the file. Edit HTML to change.');
 };
 
 init();
